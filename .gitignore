@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Local config (copy from config/ground_station.example.toml)
+config/ground_station.toml
+
+# Recorded sessions and video — keep out of git by default
+data/*
+!data/.gitkeep
+*.mp4
+*.mkv
+*.h264
+
+# Secrets
+.env
+*.pem
+*.key
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
