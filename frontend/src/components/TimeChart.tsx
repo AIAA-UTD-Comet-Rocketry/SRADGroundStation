@@ -25,7 +25,7 @@ export function TimeChart({ title, unit, color, x, y, version }: Props) {
       cursor: { show: false },
       scales: { x: { time: false } },
       axes: [
-        { stroke: "#8b98a9", grid: { stroke: "#1f2a37" }, ticks: { stroke: "#1f2a37" }, label: "flight time (s)", labelSize: 18, size: 36 },
+        { stroke: "#8b98a9", grid: { stroke: "#1f2a37" }, ticks: { stroke: "#1f2a37" }, label: "time (s)", labelSize: 18, size: 36 },
         { stroke: "#8b98a9", grid: { stroke: "#1f2a37" }, ticks: { stroke: "#1f2a37" }, size: 60 },
       ],
       series: [{}, { label: title, stroke: color, width: 2, spanGaps: false }],

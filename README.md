@@ -3,8 +3,9 @@
 Raspberry Pi-based ground control system for real-time rocket telemetry, GPS tracking,
 flight visualization, and live video monitoring — UTD Comet Rocketry L3 SRAD.
 
-**Status: M1 — simulation only.** The HUD, simulator, ground logging and replay work.
-The real LoRa packet decoder and live video are **not implemented yet** (hardware TBD).
+**Status: M1.** The HUD, simulator, ground logging and replay work. LIVE mode decodes
+the flight computer's binary UART packet (`fc_uart_v1`, taken from the club's
+python-ground-station repo — not yet confirmed for L3). Live video is **not implemented yet**.
 This is a monitoring display: it never transmits to the rocket, and it is not the
 official altitude record (that's the COTS altimeter, IREC §2.5).
 
@@ -48,6 +49,16 @@ scripts/run-pi.sh --kiosk     # first run installs Python deps (needs internet o
 `--kiosk` opens Chromium fullscreen on the Pi's monitor. To view from other laptops
 on the same network, set `host = "0.0.0.0"` in `config/ground_station.toml`.
 
+## Testing LIVE mode without hardware
+
+```bash
+# terminal 1: fake flight computer on a virtual serial port (prints e.g. /dev/ttys003)
+cd backend && .venv/bin/python -m ground_station.tools.fake_fc_uart
+
+# terminal 2: ground station reading that port
+cd backend && .venv/bin/python -m ground_station --mode LIVE --serial-port /dev/ttys003
+```
+
 ## Configuration
 
 `cp config/ground_station.example.toml config/ground_station.toml` and edit. The local
@@ -68,7 +79,8 @@ file is git-ignored. Recorded sessions go to `data/sessions/<UTC time>_<mode>/`.
 ```
 backend/ground_station/
   schema.py        normalized telemetry model (DRAFT v1)
-  sources/         simulation.py · serial_lora.py (skeleton) · replay.py
+  sources/         simulation.py · serial_lora.py · decoders.py · replay.py
+  tools/           fake_fc_uart.py (virtual serial port for bench tests)
   hub.py           link stats, phase events, fan-out
   recorder.py      append-only CSV session logs
   server.py        FastAPI: /ws, /api/status, /api/mode, /api/sim, /api/sessions

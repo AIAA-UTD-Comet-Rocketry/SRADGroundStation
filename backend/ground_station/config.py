@@ -48,8 +48,9 @@ class SimulationConfig:
 class SerialConfig:
     port: str = "/dev/ttyUSB0"
     baud: int = 115200
-    # Only "jsonl" exists today (bench format). Add the real flight packet decoder once defined.
-    format: str = "jsonl"
+    # "fc_uart_v1" = binary flight-computer packet (0xAA 0xBB ..., 29 bytes; unconfirmed for L3)
+    # "jsonl"      = one JSON object per line (bench testing)
+    format: str = "fc_uart_v1"
 
 
 @dataclass

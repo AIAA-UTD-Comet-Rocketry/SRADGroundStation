@@ -48,9 +48,22 @@ export function Readouts({ latest, dataState }: { latest: TelemetryFrame | null;
     <div className="readouts">
       <Tile label="Altitude AGL (baro)" value={fmt(d?.altitude_agl_m)} unit="m" sub={`${fmt(d?.altitude_agl_m != null ? d.altitude_agl_m * M_TO_FT : null)} ft`} state={st(d?.altitude_agl_m)} />
       <Tile label="Vertical velocity" value={fmt(d?.vertical_velocity_mps, 1)} unit="m/s" state={st(d?.vertical_velocity_mps)} />
-      <Tile label="Vertical accel" value={fmt(d?.acceleration_mps2, 1)} unit="m/s²" sub={d?.acceleration_mps2 != null ? `${fmt(d.acceleration_mps2 / 9.80665, 2)} g` : undefined} state={st(d?.acceleration_mps2)} />
-      <Tile label="Flight time" value={fmtTime(d?.flight_time_s)} state={st(d?.flight_time_s)} />
-      <Tile label="Phase (from packet)" value={d?.phase ?? ""} state={d ? dataState : "nodata"} sub={d ? `seq ${d.sequence}` : undefined} />
+      {d?.acceleration_mps2 == null && d?.accel_z_mps2 != null ? (
+        <Tile label="Body Z accel (axis TBC)" value={fmt(d.accel_z_mps2, 1)} unit="m/s²" sub={`${fmt(d.accel_z_mps2 / 9.80665, 2)} g, as reported`} state={dataState} />
+      ) : (
+        <Tile label="Vertical accel" value={fmt(d?.acceleration_mps2, 1)} unit="m/s²" sub={d?.acceleration_mps2 != null ? `${fmt(d.acceleration_mps2 / 9.80665, 2)} g` : undefined} state={st(d?.acceleration_mps2)} />
+      )}
+      {d?.flight_time_s == null && d?.fc_time_s != null ? (
+        <Tile label="FC clock" value={fmt(d.fc_time_s, 1)} unit="s" sub="since FC power-on (not T+)" state={dataState} />
+      ) : (
+        <Tile label="Flight time" value={fmtTime(d?.flight_time_s)} state={st(d?.flight_time_s)} />
+      )}
+      <Tile
+        label="Phase (from packet)"
+        value={d?.phase ?? ""}
+        state={d ? dataState : "nodata"}
+        sub={d ? (d.fc_state ? `FC: ${d.fc_state}` : d.sequence != null ? `seq ${d.sequence}` : undefined) : undefined}
+      />
       <Tile label="Pressure / Temp" value={fmt(d?.pressure_pa != null ? d.pressure_pa / 100 : null, 1)} unit="hPa" sub={d?.temperature_c != null ? `${fmt(d.temperature_c, 1)} °C` : "temp: no data"} state={st(d?.pressure_pa)} />
     </div>
   );
@@ -76,7 +89,13 @@ export function LinkPanel({ status, socket }: { status: Status | null; socket: S
         <dd>{fmt(l?.received)}</dd>
         <dt>Missed (seq gaps)</dt>
         <dd>
-          {fmt(l?.missed)} {l?.loss_pct != null && <span className="dim">({fmt(l.loss_pct, 1)}%)</span>}
+          {l && !l.sequence_tracking ? (
+            <span className="dim">n/a (no packet counter)</span>
+          ) : (
+            <>
+              {fmt(l?.missed)} {l?.loss_pct != null && <span className="dim">({fmt(l.loss_pct, 1)}%)</span>}
+            </>
+          )}
         </dd>
         <dt>Rejected (invalid)</dt>
         <dd className={l && l.rejected > 0 ? "warn-text" : ""}>{fmt(l?.rejected)}</dd>
@@ -129,6 +148,40 @@ export function GpsPanel({ frames, status }: { frames: TelemetryFrame[]; status:
   );
 }
 
+// ---------------------------------------------------------------- flight computer / IMU
+export function ImuPanel({ latest }: { latest: TelemetryFrame | null }) {
+  const d = latest?.data;
+  const hasImu = d && (d.accel_x_mps2 != null || d.pitch_deg != null || d.status_flags != null);
+  if (!hasImu) return null; // only shown when the source actually sends these fields
+  const g = (v: number | null) => (v == null ? "—" : `${fmt(v / 9.80665, 2)} g`);
+  const flags = d.status_flags;
+  return (
+    <div className="panel">
+      <div className="panel-title">Flight computer (raw, axes TBC)</div>
+      <dl className="kv">
+        <dt>Accel X / Y / Z</dt>
+        <dd className="mono">
+          {g(d.accel_x_mps2)} / {g(d.accel_y_mps2)} / {g(d.accel_z_mps2)}
+        </dd>
+        <dt>Pitch / Roll / Yaw</dt>
+        <dd className="mono">
+          {fmt(d.pitch_deg)}° / {fmt(d.roll_deg)}° / {fmt(d.yaw_deg)}°
+        </dd>
+        <dt>FC state</dt>
+        <dd>{d.fc_state ?? "—"}</dd>
+        <dt>Status flags</dt>
+        <dd className="mono">
+          {flags == null ? "—" : `0x${flags.toString(16).padStart(2, "0").toUpperCase()}`}
+          {flags != null && <span className="dim"> SD {flags & 0x01 ? "on" : "off"} · armed {flags & 0x10 ? "yes" : "no"}</span>}
+        </dd>
+        <dt>Pyro status</dt>
+        <dd className="mono">{d.pyro_status == null ? "—" : `0x${d.pyro_status.toString(16).padStart(2, "0").toUpperCase()}`}</dd>
+      </dl>
+      <div className="dim small">Flag bit meanings from an older club test script — confirm with avionics.</div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- recording
 export function RecordingPanel({ status }: { status: Status | null }) {
   const r = status?.recording;
@@ -168,7 +221,7 @@ export function EventLog({ events, rejects }: { events: FlightEvent[]; rejects: 
             <span className="mono dim">{fmtClock(e.received_at_utc)}</span>
             <span className="mono">{fmtTime(e.flight_time_s)}</span>
             <span className="event-name">{e.name}</span>
-            <span className="dim small">seq {e.sequence}</span>
+            <span className="dim small">{e.sequence != null ? `seq ${e.sequence}` : ""}</span>
           </li>
         ))}
       </ul>

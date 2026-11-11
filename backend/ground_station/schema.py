@@ -33,6 +33,7 @@ class Phase(str, Enum):
     PAD = "PAD"
     BOOST = "BOOST"
     COAST = "COAST"
+    APOGEE = "APOGEE"
     DROGUE = "DROGUE"
     MAIN = "MAIN"
     LANDED = "LANDED"
@@ -44,9 +45,15 @@ class FlightData(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     schema_version: int = SCHEMA_VERSION
-    sequence: int = Field(ge=0)
+    # Packet counter set by the rocket. None when the packet format has no counter,
+    # in which case packet-loss can't be measured (only staleness).
+    sequence: int | None = Field(default=None, ge=0)
     flight_time_s: float | None = None
+    # Flight computer's own clock (e.g. ms since power-on), when the packet carries one.
+    fc_time_s: float | None = None
     phase: Phase = Phase.UNKNOWN
+    # Raw state name as the flight computer reports it (e.g. "ARMED"), before mapping to Phase.
+    fc_state: str | None = None
 
     altitude_agl_m: float | None = None
     vertical_velocity_mps: float | None = None
@@ -59,6 +66,19 @@ class FlightData(BaseModel):
 
     pressure_pa: float | None = Field(default=None, ge=0)
     temperature_c: float | None = None
+
+    # Body-frame IMU values as reported. Axis orientation and whether gravity is
+    # included are NOT confirmed — don't treat any of these as "vertical".
+    accel_x_mps2: float | None = None
+    accel_y_mps2: float | None = None
+    accel_z_mps2: float | None = None
+    pitch_deg: float | None = None
+    roll_deg: float | None = None
+    yaw_deg: float | None = None
+
+    # Raw flight-computer bitfields (meaning per flight software).
+    status_flags: int | None = Field(default=None, ge=0)
+    pyro_status: int | None = Field(default=None, ge=0)
 
 
 class TelemetryFrame(BaseModel):
@@ -100,7 +120,7 @@ class FlightEvent(BaseModel):
 
     received_at_utc: datetime
     flight_time_s: float | None
-    sequence: int
+    sequence: int | None
     name: str
     from_phase: Phase
     to_phase: Phase
@@ -112,6 +132,9 @@ TRANSITION_NAMES: dict[tuple[Phase, Phase], str] = {
     (Phase.PAD, Phase.BOOST): "Liftoff",
     (Phase.BOOST, Phase.COAST): "Burnout",
     (Phase.COAST, Phase.DROGUE): "Apogee / drogue deploy",
+    (Phase.COAST, Phase.APOGEE): "Apogee",
+    (Phase.APOGEE, Phase.DROGUE): "Drogue deploy",
+    (Phase.APOGEE, Phase.MAIN): "Main deploy",
     (Phase.DROGUE, Phase.MAIN): "Main deploy",
     (Phase.MAIN, Phase.LANDED): "Landed",
     (Phase.DROGUE, Phase.LANDED): "Landed",

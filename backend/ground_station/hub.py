@@ -44,9 +44,14 @@ class LinkStats:
         self.last_packet_utc: datetime | None = None
         self.last_rssi_dbm: float | None = None
         self.last_snr_db: float | None = None
+        # False once any packet arrives without a sequence number: loss can't be measured.
+        self.sequence_tracking = True
 
-    def record(self, seq: int, rssi: float | None, snr: float | None, now_utc: datetime) -> None:
-        if self.last_sequence is not None:
+    def record(self, seq: int | None, rssi: float | None, snr: float | None, now_utc: datetime) -> None:
+        if seq is None:
+            self.sequence_tracking = False
+            self.last_sequence = None
+        elif self.last_sequence is not None:
             if seq > self.last_sequence:
                 self.missed += seq - self.last_sequence - 1
             else:
@@ -74,7 +79,8 @@ class LinkStats:
             "missed": self.missed,
             "rejected": self.rejected,
             "sequence_resets": self.sequence_resets,
-            "loss_pct": round(100.0 * self.missed / expected, 2) if expected else None,
+            "sequence_tracking": self.sequence_tracking,
+            "loss_pct": round(100.0 * self.missed / expected, 2) if expected and self.sequence_tracking else None,
             "last_sequence": self.last_sequence,
             "last_packet_age_s": round(age, 2) if age is not None else None,
             "last_packet_utc": self.last_packet_utc.isoformat() if self.last_packet_utc else None,

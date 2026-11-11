@@ -31,9 +31,11 @@ main_deploy_agl_m = 450.0
 # seed = 1                    # set for repeatable runs
 
 [serial]
-# LoRa ground receiver. Hardware and packet format are TBD; "jsonl" is a bench-test format.
+# Ground radio receiver on USB serial.
+#   "fc_uart_v1" = binary flight-computer packet (0xAA 0xBB, 29 bytes) — unconfirmed for L3
+#   "jsonl"      = one JSON object per line, for bench tests
 port = "/dev/ttyUSB0"
 baud = 115200
-format = "jsonl"
+format = "fc_uart_v1"
 # Radio frequency/modulation are configured on the radio module itself, per the team's
 # IREC frequency assignment. Nothing in this software sets or assumes a frequency.

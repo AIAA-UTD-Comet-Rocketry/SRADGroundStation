@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTelemetry } from "./useTelemetry";
 import type { ValueState } from "./format";
 import { TimeChart } from "./components/TimeChart";
-import { Controls, EventLog, GpsPanel, LinkPanel, ModeBanner, Readouts, RecordingPanel, VideoPane } from "./components/Panels";
+import { Controls, EventLog, GpsPanel, ImuPanel, LinkPanel, ModeBanner, Readouts, RecordingPanel, VideoPane } from "./components/Panels";
 
 export default function App() {
   const t = useTelemetry();
@@ -14,8 +14,10 @@ export default function App() {
     const alt: (number | null)[] = [];
     const vel: (number | null)[] = [];
     for (const f of frames) {
-      if (f.data.flight_time_s == null) continue;
-      x.push(f.data.flight_time_s);
+      // Prefer time since liftoff; fall back to the flight computer's clock if that's all the packet has.
+      const t = f.data.flight_time_s ?? f.data.fc_time_s;
+      if (t == null) continue;
+      x.push(t);
       alt.push(f.data.altitude_agl_m);
       vel.push(f.data.vertical_velocity_mps);
     }
@@ -45,6 +47,7 @@ export default function App() {
           <VideoPane />
           <LinkPanel status={t.status} socket={t.socket} />
           <GpsPanel frames={frames} status={t.status} />
+          <ImuPanel latest={t.latest} />
           <RecordingPanel status={t.status} />
         </aside>
       </main>

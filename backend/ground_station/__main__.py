@@ -12,6 +12,7 @@ import uvicorn
 from .config import load_config
 from .schema import Mode
 from .server import REPO_ROOT, create_app
+from .sources.decoders import DECODERS
 
 DEFAULT_CONFIG = REPO_ROOT / "config" / "ground_station.toml"
 
@@ -22,6 +23,8 @@ def main() -> None:
     p.add_argument("--mode", choices=[Mode.SIMULATION.value, Mode.LIVE.value], help="override default_mode")
     p.add_argument("--host", help="override server.host")
     p.add_argument("--port", type=int, help="override server.port")
+    p.add_argument("--serial-port", help="override serial.port (e.g. /dev/ttyUSB0)")
+    p.add_argument("--serial-format", choices=sorted(DECODERS), help="override serial.format")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -33,6 +36,10 @@ def main() -> None:
         cfg.server.host = args.host
     if args.port:
         cfg.server.port = args.port
+    if args.serial_port:
+        cfg.serial.port = args.serial_port
+    if args.serial_format:
+        cfg.serial.format = args.serial_format
 
     log = logging.getLogger(__name__)
     log.info("config: %s", path or "built-in defaults")
