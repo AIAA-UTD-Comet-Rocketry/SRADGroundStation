@@ -1,0 +1,47 @@
+# Copy to config/ground_station.toml (git-ignored) and edit.
+# Every key is optional; omitted keys use the defaults shown here.
+
+[server]
+# 127.0.0.1 = only this Pi can open the HUD.
+# 0.0.0.0   = any laptop on the same network can view it at http://<pi-ip>:8000
+host = "127.0.0.1"
+port = 8000
+
+[ground]
+default_mode = "SIMULATION"   # SIMULATION or LIVE
+data_dir = "data"             # relative to the repo root; put on SSD/microSD, not tmpfs
+stale_after_s = 2.0           # telemetry older than this is shown as STALE
+history_frames = 6000         # packets kept in memory for plots (10 min at 10 Hz)
+
+[simulation]
+rate_hz = 10
+apogee_ft = 10000             # 10000 / 30000 / 45000 categories
+packet_loss = 0.02
+corrupt_rate = 0.0
+burn_time_s = 5.0
+# SYNTHETIC origin for simulated GPS only. Do not put the real launch site here.
+origin_lat_deg = 32.0
+origin_lon_deg = -97.0
+pad_elevation_m = 200.0
+wind_east_mps = 4.0
+wind_north_mps = 1.5
+drogue_descent_mps = 25.0
+main_descent_mps = 6.0
+main_deploy_agl_m = 450.0
+# seed = 1                    # set for repeatable runs
+
+[serial]
+# Ground radio receiver on USB serial.
+#   "fc_uart_v1" = binary flight-computer packet (0xAA 0xBB, 29 bytes) — unconfirmed for L3
+#   "jsonl"      = one JSON object per line, for bench tests
+port = "/dev/ttyUSB0"
+baud = 115200
+format = "fc_uart_v1"
+# How packets are wrapped on the serial line:
+#   "raw" (transparent radio) | "xbee_api" (XBee AP=1) | "xbee_api_escaped" (XBee AP=2)
+framing = "raw"
+# XBee only: poll the ground module for last-packet RSSI (local read-only "DB" query)
+xbee_query_rssi = true
+xbee_rssi_interval_s = 0.5
+# Radio frequency/modulation are configured on the radio module itself, per the team's
+# IREC frequency assignment. Nothing in this software sets or assumes a frequency.
