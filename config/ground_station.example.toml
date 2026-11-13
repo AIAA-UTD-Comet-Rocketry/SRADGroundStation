@@ -45,3 +45,9 @@ xbee_query_rssi = true
 xbee_rssi_interval_s = 0.5
 # Radio frequency/modulation are configured on the radio module itself, per the team's
 # IREC frequency assignment. Nothing in this software sets or assumes a frequency.
+
+[rocket]
+# OpenRocket design drawn in the HUD, with its first simulation shown as the
+# predicted flight (reference only). Path relative to the repo root.
+ork_file = "rockets/irec-2027-v3.ork"
+display_name = "IREC 2027 · V3"
