@@ -13,6 +13,7 @@ from .config import load_config
 from .schema import Mode
 from .server import REPO_ROOT, create_app
 from .sources.decoders import DECODERS
+from .sources.serial_lora import FRAMINGS
 
 DEFAULT_CONFIG = REPO_ROOT / "config" / "ground_station.toml"
 
@@ -25,6 +26,7 @@ def main() -> None:
     p.add_argument("--port", type=int, help="override server.port")
     p.add_argument("--serial-port", help="override serial.port (e.g. /dev/ttyUSB0)")
     p.add_argument("--serial-format", choices=sorted(DECODERS), help="override serial.format")
+    p.add_argument("--serial-framing", choices=FRAMINGS, help="override serial.framing (raw / XBee API)")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -40,6 +42,8 @@ def main() -> None:
         cfg.serial.port = args.serial_port
     if args.serial_format:
         cfg.serial.format = args.serial_format
+    if args.serial_framing:
+        cfg.serial.framing = args.serial_framing
 
     log = logging.getLogger(__name__)
     log.info("config: %s", path or "built-in defaults")

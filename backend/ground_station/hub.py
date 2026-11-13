@@ -21,7 +21,7 @@ from .schema import FlightEvent, Mode, Phase, TelemetryFrame, transition_name
 from .sources import (
     RejectedPacket,
     ReplaySource,
-    SerialLoRaSource,
+    SerialRadioSource,
     SimulationSource,
     SourcePacket,
     TelemetrySource,
@@ -121,7 +121,7 @@ class TelemetryHub:
         if mode == Mode.SIMULATION:
             return SimulationSource(self.cfg.simulation)
         if mode == Mode.LIVE:
-            return SerialLoRaSource(self.cfg.serial)
+            return SerialRadioSource(self.cfg.serial)
         if session_csv is None:
             raise ValueError("REPLAY needs a recorded session")
         return ReplaySource(session_csv, speed=speed)

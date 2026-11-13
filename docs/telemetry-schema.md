@@ -68,6 +68,25 @@ corruption properly. There is also no GPS in this packet.
 Test without hardware: `python -m ground_station.tools.fake_fc_uart` creates a virtual
 serial port and streams these packets (see the module docstring).
 
+## Serial framing (`serial.framing`)
+
+How packets are wrapped on the serial line, independent of the packet format above:
+
+| framing | Use when | Notes |
+|---|---|---|
+| `raw` (default) | radio in transparent mode | serial bytes = flight computer bytes; no RSSI |
+| `xbee_api` | Digi XBee ground module, `AP=1` | unwraps 0x90 / 0x80 / 0x81 receive frames, checks the frame checksum |
+| `xbee_api_escaped` | Digi XBee ground module, `AP=2` | same, with 0x7D escaping |
+
+With XBee framing the ground station asks the ground module for the last packet's RSSI
+every `xbee_rssi_interval_s` using the local `DB` AT command. Local AT commands are
+answered by the module itself and are not transmitted; the code refuses to build any
+command other than read-only queries. Only the **ground** XBee needs API mode — the rocket
+side can stay transparent, and the decoder copes with a flight packet split across frames.
+
+Test: `python -m ground_station.tools.fake_fc_uart --framing xbee_api` then run the ground
+station with `--serial-framing xbee_api`.
+
 ## Bench format (`serial.format = "jsonl"`)
 
 One JSON object per line over serial, using the field names above, optionally with

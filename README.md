@@ -59,6 +59,9 @@ cd backend && .venv/bin/python -m ground_station.tools.fake_fc_uart
 cd backend && .venv/bin/python -m ground_station --mode LIVE --serial-port /dev/ttys003
 ```
 
+Add `--framing xbee_api` to the fake and `--serial-framing xbee_api` to the ground station
+to test a Digi XBee receiver in API mode (including RSSI).
+
 ## Configuration
 
 `cp config/ground_station.example.toml config/ground_station.toml` and edit. The local
@@ -79,7 +82,7 @@ file is git-ignored. Recorded sessions go to `data/sessions/<UTC time>_<mode>/`.
 ```
 backend/ground_station/
   schema.py        normalized telemetry model (DRAFT v1)
-  sources/         simulation.py · serial_lora.py · decoders.py · replay.py
+  sources/         simulation.py · serial_lora.py · decoders.py · xbee.py · replay.py
   tools/           fake_fc_uart.py (virtual serial port for bench tests)
   hub.py           link stats, phase events, fan-out
   recorder.py      append-only CSV session logs

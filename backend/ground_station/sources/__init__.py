@@ -8,7 +8,8 @@ from .decoders import (
     parse_jsonl_line,
 )
 from .replay import ReplaySource
-from .serial_lora import SerialLoRaSource
+from .serial_lora import SerialLoRaSource, SerialRadioSource, make_decoder
+from .xbee import XBeeApiDecoder, XBeeFrameReader, build_frame
 from .simulation import SimFlight, SimulationSource
 
 __all__ = [
@@ -20,6 +21,11 @@ __all__ = [
     "RejectedPacket",
     "ReplaySource",
     "SerialLoRaSource",
+    "SerialRadioSource",
+    "XBeeApiDecoder",
+    "XBeeFrameReader",
+    "build_frame",
+    "make_decoder",
     "SimFlight",
     "SimulationSource",
     "SourceEvent",

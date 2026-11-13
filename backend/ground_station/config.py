@@ -51,6 +51,14 @@ class SerialConfig:
     # "fc_uart_v1" = binary flight-computer packet (0xAA 0xBB ..., 29 bytes; unconfirmed for L3)
     # "jsonl"      = one JSON object per line (bench testing)
     format: str = "fc_uart_v1"
+    # How packets are wrapped on the serial line:
+    #   "raw"              = payload bytes straight from the port (transparent-mode radio)
+    #   "xbee_api"         = Digi XBee API frames, AP=1
+    #   "xbee_api_escaped" = Digi XBee API frames, AP=2
+    framing: str = "raw"
+    # XBee only: ask the ground module for last-packet RSSI ("DB", a local read-only query).
+    xbee_query_rssi: bool = True
+    xbee_rssi_interval_s: float = 0.5
 
 
 @dataclass
