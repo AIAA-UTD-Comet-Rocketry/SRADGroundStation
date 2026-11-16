@@ -1,0 +1,159 @@
+import { useEffect, useState, type ReactNode } from "react";
+import type { SocketState } from "../useTelemetry";
+import type { Status } from "../types";
+import type { RocketModel } from "../rocket";
+import type { Theme, Units } from "../prefs";
+import { fmt } from "../format";
+import { Icon, SignalBars } from "./icons";
+
+export type View = "dashboard" | "telemetry" | "map" | "systems" | "mission" | "logs" | "settings";
+
+export const VIEWS: { id: View; label: string; icon: () => ReactNode }[] = [
+  { id: "dashboard", label: "Mission Dashboard", icon: () => Icon.home() },
+  { id: "telemetry", label: "Telemetry", icon: () => Icon.pulse() },
+  { id: "map", label: "Map & Tracking", icon: () => Icon.pin() },
+  { id: "systems", label: "Systems Health", icon: () => Icon.shield() },
+  { id: "mission", label: "Mission Timeline", icon: () => Icon.list() },
+  { id: "logs", label: "Data & Logs", icon: () => Icon.db() },
+  { id: "settings", label: "Configuration", icon: () => Icon.gear() },
+];
+
+export const APP_VERSION = "v0.3";
+
+export function Sidebar({ view, onView, socket }: { view: View; onView: (v: View) => void; socket: SocketState }) {
+  return (
+    <nav className="side">
+      <div className="side-brand">
+        <img src="/comet-logo.png" alt="" className="side-logo" />
+        <div>
+          <div className="side-name">COMET ROCKETRY</div>
+          <div className="side-org">AIAA UT DALLAS</div>
+        </div>
+      </div>
+      <ul className="side-nav">
+        {VIEWS.map((v) => (
+          <li key={v.id}>
+            <button className={`side-item ${view === v.id ? "active" : ""}`} onClick={() => onView(v.id)} aria-current={view === v.id ? "page" : undefined}>
+              {v.icon()}
+              <span>{v.label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="side-foot">
+        <div className={`side-status ${socket === "OPEN" ? "ok" : "bad"}`}>
+          <span className="dot" /> {socket === "OPEN" ? "Ground Station Online" : "Backend Offline"}
+        </div>
+        <div className="side-ver">UTD SRAD Ground Station · {APP_VERSION}</div>
+      </div>
+    </nav>
+  );
+}
+
+function useNow() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 500);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
+
+function rssiBars(rssi: number | null | undefined) {
+  if (rssi == null) return 0;
+  if (rssi > -70) return 4;
+  if (rssi > -85) return 3;
+  if (rssi > -100) return 2;
+  return 1;
+}
+
+export function TopBar({
+  title,
+  rocket,
+  status,
+  socket,
+  packetRate,
+  theme,
+  setTheme,
+  units,
+  setUnits,
+}: {
+  title: string;
+  rocket: RocketModel | null;
+  status: Status | null;
+  socket: SocketState;
+  packetRate: number | null;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  units: Units;
+  setUnits: (u: Units) => void;
+}) {
+  const now = useNow();
+  const mode = socket !== "OPEN" ? "OFFLINE" : (status?.mode ?? "—");
+  const link = status?.link;
+  const linkState = socket !== "OPEN" ? "bad" : !link || link.state === "NO_DATA" ? "off" : link.state === "OK" ? "ok" : "bad";
+  const linkText = socket !== "OPEN" ? "Backend down" : !link || link.state === "NO_DATA" ? "No data" : link.state === "OK" ? "Live" : "NO SIGNAL";
+
+  return (
+    <header className="top">
+      <div className="top-title">
+        <h1>{title}</h1>
+        <div className="top-crumb">Comet Rocketry — Mission Operations</div>
+      </div>
+      <div className="top-right">
+        <div className="chip vehicle-chip" title={rocket ? `OpenRocket file: ${rocket.source_file}` : "No OpenRocket file loaded"}>
+          {Icon.rocket(16)} <span>{rocket?.name ?? "No vehicle file"}</span>
+        </div>
+        <div className={`mode-pill mode-${mode.toLowerCase()}`}>
+          <span className="dot" /> {mode}
+        </div>
+        <div className={`chip link-chip link-${linkState}`}>
+          <span className="dot" /> Link: {linkText} <SignalBars level={linkState === "ok" ? rssiBars(link?.rssi_dbm) || 2 : 0} />
+        </div>
+        <div className="chip stat-chip">
+          <div>
+            <div className="chip-label">Downlink</div>
+            <div className="chip-value">{packetRate != null ? `${fmt(packetRate, 1)} pkt/s` : "—"}</div>
+          </div>
+          <div>
+            <div className="chip-label">Uplink</div>
+            <div className="chip-value dim">none</div>
+          </div>
+        </div>
+        <div className="chip clock-chip">
+          <div className="chip-label">UTC</div>
+          <div className="chip-value mono">{now.toISOString().slice(11, 19)}</div>
+          <div className="chip-label">{now.toISOString().slice(0, 10)}</div>
+        </div>
+        <div className="toggles">
+          <button className="icon-btn" onClick={() => setUnits(units === "imperial" ? "metric" : "imperial")} title="Switch units">
+            {units === "imperial" ? "ft" : "m"}
+          </button>
+          <button className="icon-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+            {theme === "dark" ? Icon.sun() : Icon.moon()}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/** Never let simulated or replayed data look like a live flight. */
+export function ModeStrip({ status, socket }: { status: Status | null; socket: SocketState }) {
+  if (socket !== "OPEN") return <div className="strip strip-down">BACKEND DISCONNECTED — DATA ON SCREEN IS NOT UPDATING</div>;
+  if (status?.mode === "SIMULATION")
+    return (
+      <div className="strip strip-sim">
+        SIMULATION — SYNTHETIC DATA, NOT A REAL FLIGHT{status.source_status?.paused === true ? " · PAUSED" : ""}
+        <span>MONITORING ONLY · NO UPLINK</span>
+      </div>
+    );
+  if (status?.mode === "REPLAY")
+    return (
+      <div className="strip strip-replay">
+        REPLAY — {String(status.source_status?.session ?? "")}
+        <span>MONITORING ONLY · NO UPLINK</span>
+      </div>
+    );
+  return null;
+}

@@ -222,13 +222,17 @@ def _predicted(root: ET.Element) -> dict[str, Any] | None:
     types = (branch.get("types") or "").split(",")
     try:
         it, ia, iv = types.index("Time"), types.index("Altitude"), types.index("Vertical velocity")
+        ie = types.index("Position East of launch") if "Position East of launch" in types else None
+        inn = types.index("Position North of launch") if "Position North of launch" in types else None
     except ValueError:
         return None
     rows = []
     for dp in branch.findall("datapoint"):
         vals = (dp.text or "").split(",")
         try:
-            rows.append((float(vals[it]), float(vals[ia]), float(vals[iv])))
+            east = float(vals[ie]) if ie is not None else math.nan
+            north = float(vals[inn]) if inn is not None else math.nan
+            rows.append((float(vals[it]), float(vals[ia]), float(vals[iv]), east, north))
         except (ValueError, IndexError):
             continue
     step = max(1, math.ceil(len(rows) / MAX_PREDICTED_POINTS))
@@ -253,6 +257,9 @@ def _predicted(root: ET.Element) -> dict[str, Any] | None:
         "t": [round(r[0], 3) for r in rows],
         "altitude_m": [round(r[1], 2) for r in rows],
         "vertical_velocity_mps": [round(r[2], 2) for r in rows],
+        # Ground track relative to the launch point (m); null if the sim didn't record it.
+        "east_m": [round(r[3], 1) if math.isfinite(r[3]) else None for r in rows],
+        "north_m": [round(r[4], 1) if math.isfinite(r[4]) else None for r in rows],
         "events": events,
         "max_altitude_m": num("maxaltitude"),
         "max_velocity_mps": num("maxvelocity"),

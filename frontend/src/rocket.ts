@@ -16,6 +16,8 @@ export interface RocketModel {
     t: number[];
     altitude_m: number[];
     vertical_velocity_mps: number[];
+    east_m: (number | null)[];
+    north_m: (number | null)[];
     events: { type: string; t: number }[];
     max_altitude_m: number | null;
     max_velocity_mps: number | null;

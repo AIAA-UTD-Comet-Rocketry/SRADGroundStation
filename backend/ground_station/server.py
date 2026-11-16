@@ -44,6 +44,17 @@ class SimRequest(BaseModel):
     dropout_s: float = Field(default=5.0, ge=0, le=120)
 
 
+class UiFiles(StaticFiles):
+    """Serve the built UI. index.html is never cached, so a browser picks up a new build
+    immediately (hashed JS/CSS assets can still be cached)."""
+
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        if path in ("", ".", "index.html") or path.endswith(".html"):
+            resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 def resolve_data_dir(cfg: Config) -> Path:
     d = cfg.ground.data_dir
     return d if d.is_absolute() else REPO_ROOT / d
@@ -178,7 +189,7 @@ def create_app(cfg: Config) -> FastAPI:
                 await reader
 
     if FRONTEND_DIST.is_dir():
-        app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="ui")
+        app.mount("/", UiFiles(directory=FRONTEND_DIST, html=True), name="ui")
     else:
 
         @app.get("/")
