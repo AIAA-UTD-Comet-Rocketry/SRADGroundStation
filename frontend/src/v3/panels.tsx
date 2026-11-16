@@ -43,7 +43,10 @@ export function MissionTimeline({
     { label: "Landing", est: t("groundhit"), match: (e) => e.to_phase === "LANDED" },
   ];
   const actual = steps.map((s) => events.find(s.match) ?? null);
-  const nextIdx = phase === "LANDED" ? -1 : actual.findIndex((a) => a === null);
+  // A step with no event of its own still counts as passed if a later one happened
+  // (e.g. the station started listening after liftoff).
+  const implied = actual.map((a, i) => !a && actual.slice(i + 1).some(Boolean));
+  const nextIdx = phase === "LANDED" ? -1 : actual.findIndex((a, i) => a === null && !implied[i]);
 
   const when = (e: FlightEvent) =>
     e.flight_time_s != null ? `T+${fmtMmSs(e.flight_time_s)}` : `${new Date(e.received_at_utc).toISOString().slice(11, 19)}Z`;
@@ -58,14 +61,15 @@ export function MissionTimeline({
         </li>
         {steps.map((s, i) => {
           const a = actual[i];
-          const state = a ? "done" : i === nextIdx && hasData ? "next" : "todo";
+          const state = a || implied[i] ? "done" : i === nextIdx && hasData ? "next" : "todo";
           return (
             <li key={s.label} className={`mtl-item ${state}`}>
-              <span className="mtl-dot">{a && Icon.check(12)}</span>
-              <span className="mtl-time mono">{a ? when(a) : s.est != null ? `T+${fmtMmSs(s.est)}` : "—"}</span>
+              <span className="mtl-dot">{(a || implied[i]) && Icon.check(12)}</span>
+              <span className="mtl-time mono">{a ? when(a) : implied[i] ? "missed" : s.est != null ? `T+${fmtMmSs(s.est)}` : "—"}</span>
               <span className="mtl-label">
                 {s.label}
-                {!a && s.est != null && <span className="est"> (est.)</span>}
+                {implied[i] && <span className="est"> (not received, passed)</span>}
+                {!a && !implied[i] && s.est != null && <span className="est"> (est.)</span>}
                 {state === "next" && <span className="est"> · next</span>}
               </span>
             </li>
