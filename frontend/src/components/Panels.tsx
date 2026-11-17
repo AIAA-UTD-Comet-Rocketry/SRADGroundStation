@@ -188,7 +188,15 @@ export function RecordingPanel({ status }: { status: Status | null }) {
   return (
     <div className="panel">
       <div className="panel-title">Ground recording</div>
-      <div className={`link-state ${r?.active ? "link-good" : "link-warn"}`}>{r?.active ? "● RECORDING" : "NOT RECORDING"}</div>
+      {r?.error ? (
+        <>
+          <div className="link-state link-bad">RECORDING FAILED</div>
+          <div className="small mono">{r.error}</div>
+          <div className="dim small">Live telemetry is unaffected. Check the SD card; switching mode starts a new log.</div>
+        </>
+      ) : (
+        <div className={`link-state ${r?.active ? "link-good" : "link-warn"}`}>{r?.active ? "● RECORDING" : "NOT RECORDING"}</div>
+      )}
       <div className="dim small mono path">{r?.path ?? (status?.mode === "REPLAY" ? "replays are not re-recorded" : "—")}</div>
       {r?.active && <div className="dim small">{fmt(r.rows)} rows written</div>}
       <div className="dim small">Ground log only — not the onboard SD or official altimeter record.</div>

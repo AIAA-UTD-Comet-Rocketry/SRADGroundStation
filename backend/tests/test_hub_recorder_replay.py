@@ -116,3 +116,54 @@ def test_simulation_source_is_monitoring_only():
     for cls in (SimulationSource, ReplaySource):
         names = {n.lower() for n in dir(cls)}
         assert not any(w in n for n in names for w in ("uplink", "transmit", "ignite", "fire", "arm"))
+
+
+def test_disk_failure_stops_recording_but_not_telemetry(tmp_path, monkeypatch):
+    """A full/failed SD card must never stop the live display (the ground log is secondary)."""
+
+    async def run():
+        hub = TelemetryHub(Config(), tmp_path)
+        await hub.switch(Mode.SIMULATION)
+        hub._task.cancel()
+        src = hub.source
+        q = hub.subscribe()
+        hub.handle_packet(SourcePacket(FlightData(sequence=0, phase=Phase.PAD), None, None), src)
+
+        def disk_full(*_a, **_k):
+            raise OSError(28, "No space left on device")
+
+        monkeypatch.setattr(hub.recorder, "write_frame", disk_full)
+        monkeypatch.setattr(hub.recorder, "write_event", disk_full)
+        for i, ph in enumerate([Phase.BOOST, Phase.COAST], start=1):
+            hub.handle_packet(SourcePacket(FlightData(sequence=i, phase=ph), None, None), src)
+        hub.handle_rejected(RejectedPacket("bad sync", "aa"))  # recorder gone: must not raise
+        msgs = [q.get_nowait() for _ in range(q.qsize())]
+        await hub.shutdown()
+        return hub, msgs
+
+    hub, msgs = asyncio.run(run())
+    assert len(hub.history) == 3  # every packet still reached the display
+    assert [e["name"] for e in hub.events] == ["Liftoff", "Burnout"]
+    assert sum(m["type"] == "frame" for m in msgs) == 3
+    assert hub.recorder is None
+    rec = hub.status()["recording"]
+    assert rec["active"] is False
+    assert "No space left" in rec["error"]
+    assert any(m["type"] == "status" and m["status"]["recording"]["error"] for m in msgs)
+
+
+def test_unwritable_data_dir_still_starts_telemetry(tmp_path):
+    blocker = tmp_path / "data"
+    blocker.write_text("not a directory")  # mkdir under a file fails with OSError
+
+    async def run():
+        hub = TelemetryHub(Config(), blocker)
+        await hub.switch(Mode.SIMULATION)
+        hub._task.cancel()
+        hub.handle_packet(SourcePacket(FlightData(sequence=0, phase=Phase.PAD), None, None), hub.source)
+        await hub.shutdown()
+        return hub
+
+    hub = asyncio.run(run())
+    assert len(hub.history) == 1
+    assert hub.status()["recording"]["error"]
