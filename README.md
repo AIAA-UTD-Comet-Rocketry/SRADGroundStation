@@ -1,5 +1,7 @@
 # SRADGroundStation
 
+[![CI](https://github.com/AIAA-UTD-Comet-Rocketry/SRADGroundStation/actions/workflows/ci.yml/badge.svg)](https://github.com/AIAA-UTD-Comet-Rocketry/SRADGroundStation/actions/workflows/ci.yml)
+
 Raspberry Pi-based ground control system for real-time rocket telemetry, GPS tracking,
 flight visualization, and live video monitoring — UTD Comet Rocketry L3 SRAD.
 
@@ -61,6 +63,13 @@ cd backend && .venv/bin/python -m ground_station --mode LIVE --serial-port /dev/
 
 Add `--framing xbee_api` to the fake and `--serial-framing xbee_api` to the ground station
 to test a Digi XBee receiver in API mode (including RSSI).
+
+## Continuous integration
+
+Every pull request and every push to `main` runs [GitHub Actions](.github/workflows/ci.yml):
+backend tests on Python 3.11 and 3.13 (the Pi's version), and the frontend type-check +
+build. The built UI is attached to each run as the `frontend-dist` artifact. Please wait for
+the checks to go green before merging.
 
 ## Configuration
 
