@@ -148,7 +148,9 @@ export function healthRows(
     },
     {
       name: "Ground recording",
-      ...(status?.recording.active
+      ...(status?.recording.error
+        ? { level: "bad" as Level, text: "FAILED" }
+        : status?.recording.active
         ? { level: "ok" as Level, text: "Recording" }
         : status?.mode === "REPLAY"
           ? { level: "off" as Level, text: "Replay" }

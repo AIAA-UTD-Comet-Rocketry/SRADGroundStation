@@ -69,7 +69,7 @@ export interface Status {
   source_status: Record<string, unknown>;
   source_error: string | null;
   link: LinkStatus;
-  recording: { active: boolean; path: string | null; rows: number };
+  recording: { active: boolean; path: string | null; rows: number; error?: string | null };
   server_time_utc: string;
 }
 

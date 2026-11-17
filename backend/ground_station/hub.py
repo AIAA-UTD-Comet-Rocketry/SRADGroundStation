@@ -11,6 +11,7 @@ import contextlib
 import logging
 import time
 from collections import deque
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -101,6 +102,8 @@ class TelemetryHub:
         self.events: list[dict[str, Any]] = []
         self.last_phase: Phase | None = None
         self.source_error: str | None = None
+        # Set when the ground log can't be written (SD card full/failed). Telemetry keeps flowing.
+        self.recording_error: str | None = None
         self._subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
         self._task: asyncio.Task[None] | None = None
         self._status_task: asyncio.Task[None] | None = None
@@ -135,10 +138,14 @@ class TelemetryHub:
             self.events = []
             self.last_phase = None
             self.source_error = None
+            self.recording_error = None
             self.source = source
             # Replays are not re-recorded; SIMULATION and LIVE each get their own session folder.
             if mode in (Mode.SIMULATION, Mode.LIVE):
-                self.recorder = SessionRecorder(self.data_dir, mode)
+                try:
+                    self.recorder = SessionRecorder(self.data_dir, mode)
+                except OSError as e:
+                    self._recording_failed(e)
             self._task = asyncio.create_task(self._run(source))
             log.info("switched to %s (%s)", mode.value, source.name)
         self._broadcast(self.snapshot())
@@ -152,8 +159,30 @@ class TelemetryHub:
         if self.source:
             await self.source.close()
         if self.recorder:
-            self.recorder.close()
+            try:
+                self.recorder.close()
+            except OSError as e:
+                self._recording_failed(e)
             self.recorder = None
+
+    # ---------- ground recording ----------
+    def _record(self, write: Callable[..., None], *args: Any) -> None:
+        """Write to the ground log. A disk failure stops recording but never stops telemetry."""
+        if self.recorder is None:
+            return
+        try:
+            write(*args)
+        except (OSError, ValueError) as e:  # ValueError: write to a closed file
+            self._recording_failed(e)
+
+    def _recording_failed(self, e: Exception) -> None:
+        log.exception("ground recording failed; telemetry display continues")
+        self.recording_error = f"{type(e).__name__}: {e}"
+        rec, self.recorder = self.recorder, None
+        if rec is not None:
+            with contextlib.suppress(Exception):
+                rec.close()
+        self._broadcast({"type": "status", "status": self.status()})
 
     async def _run(self, source: TelemetrySource) -> None:
         try:
@@ -183,7 +212,7 @@ class TelemetryHub:
         frame_json = frame.model_dump(mode="json")
         self.history.append(frame_json)
         if self.recorder:
-            self.recorder.write_frame(frame)
+            self._record(self.recorder.write_frame, frame)
         self._broadcast({"type": "frame", "frame": frame_json})
 
         phase = pkt.data.phase
@@ -199,7 +228,7 @@ class TelemetryHub:
             event_json = event.model_dump(mode="json")
             self.events.append(event_json)
             if self.recorder:
-                self.recorder.write_event(event)
+                self._record(self.recorder.write_event, event)
             self._broadcast({"type": "event", "event": event_json})
         self.last_phase = phase
         return frame
@@ -208,7 +237,7 @@ class TelemetryHub:
         now = datetime.now(UTC)
         self.stats.rejected += 1
         if self.recorder:
-            self.recorder.write_rejected(now, rej.reason, rej.raw)
+            self._record(self.recorder.write_rejected, now, rej.reason, rej.raw)
         self._broadcast({"type": "rejected", "received_at_utc": now.isoformat(), "reason": rej.reason})
 
     # ---------- status / fan-out ----------
@@ -224,6 +253,7 @@ class TelemetryHub:
                 "active": self.recorder is not None,
                 "path": str(self.recorder.path) if self.recorder else None,
                 "rows": self.recorder.rows_written if self.recorder else 0,
+                "error": self.recording_error,
             },
             "server_time_utc": datetime.now(UTC).isoformat(),
         }
