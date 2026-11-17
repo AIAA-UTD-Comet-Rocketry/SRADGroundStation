@@ -62,11 +62,19 @@ class SerialConfig:
 
 
 @dataclass
+class RocketConfig:
+    # OpenRocket design shown in the HUD (outline + predicted flight). Relative to repo root.
+    ork_file: Path | None = Path("rockets/irec-2027-v3.ork")
+    display_name: str = "IREC 2027 · V3"
+
+
+@dataclass
 class Config:
     server: ServerConfig = field(default_factory=ServerConfig)
     ground: GroundConfig = field(default_factory=GroundConfig)
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
     serial: SerialConfig = field(default_factory=SerialConfig)
+    rocket: RocketConfig = field(default_factory=RocketConfig)
 
 
 def _apply(section: Any, values: dict[str, Any]) -> None:
@@ -75,7 +83,7 @@ def _apply(section: Any, values: dict[str, Any]) -> None:
         if key not in known:
             raise ValueError(f"Unknown config key [{type(section).__name__}].{key}")
         current = getattr(section, key)
-        if isinstance(current, Path):
+        if isinstance(current, Path) or (key == "ork_file" and value):
             value = Path(value)
         elif isinstance(current, Mode):
             value = Mode(value)

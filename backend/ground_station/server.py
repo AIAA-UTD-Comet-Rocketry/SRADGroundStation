@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
@@ -19,9 +20,11 @@ from pydantic import BaseModel, Field
 from .config import Config
 from .hub import TelemetryHub
 from .recorder import list_sessions, resolve_session
+from .rocket_model import load_rocket
 from .schema import Mode
 from .sources import SimulationSource
 
+log = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
@@ -41,13 +44,37 @@ class SimRequest(BaseModel):
     dropout_s: float = Field(default=5.0, ge=0, le=120)
 
 
+class UiFiles(StaticFiles):
+    """Serve the built UI. index.html is never cached, so a browser picks up a new build
+    immediately (hashed JS/CSS assets can still be cached)."""
+
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        if path in ("", ".", "index.html") or path.endswith(".html"):
+            resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 def resolve_data_dir(cfg: Config) -> Path:
     d = cfg.ground.data_dir
     return d if d.is_absolute() else REPO_ROOT / d
 
 
+def load_rocket_json(cfg: Config) -> tuple[dict | None, str | None]:
+    f = cfg.rocket.ork_file
+    if not f:
+        return None, "no rocket file configured"
+    path = f if f.is_absolute() else REPO_ROOT / f
+    try:
+        return load_rocket(path, cfg.rocket.display_name).to_json(), None
+    except Exception as e:  # a bad design file must never stop the ground station
+        log.warning("could not load rocket file %s: %s", path, e)
+        return None, f"{type(e).__name__}: {e}"
+
+
 def create_app(cfg: Config) -> FastAPI:
     data_dir = resolve_data_dir(cfg)
+    rocket_json, rocket_error = load_rocket_json(cfg)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -66,6 +93,12 @@ def create_app(cfg: Config) -> FastAPI:
     @app.get("/api/status")
     async def get_status():
         return hub_of().status()
+
+    @app.get("/api/rocket")
+    async def get_rocket():
+        if rocket_json is None:
+            raise HTTPException(404, rocket_error or "no rocket loaded")
+        return rocket_json
 
     @app.get("/api/sessions")
     async def get_sessions():
@@ -156,7 +189,7 @@ def create_app(cfg: Config) -> FastAPI:
                 await reader
 
     if FRONTEND_DIST.is_dir():
-        app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="ui")
+        app.mount("/", UiFiles(directory=FRONTEND_DIST, html=True), name="ui")
     else:
 
         @app.get("/")
