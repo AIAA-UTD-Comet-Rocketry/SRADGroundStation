@@ -12,6 +12,7 @@ import { MissionTimeline, SystemHealth, healthRows } from "./v3/panels";
 import { Icon } from "./v3/icons";
 import { Controls, EventLog, GpsPanel, ImuPanel, LinkPanel, RecordingPanel, VideoPane } from "./components/Panels";
 import { RocketProfile } from "./components/RocketProfile";
+import { LogoScene } from "./v3/LogoScene";
 
 export default function App() {
   const t = useTelemetry();
@@ -140,7 +141,7 @@ export default function App() {
       );
       break;
     case "settings":
-      body = <Settings theme={theme} setTheme={setTheme} units={units} setUnits={setUnits} rocketFile={rocket?.source_file ?? null} />;
+      body = <Settings theme={theme} setTheme={setTheme} units={units} setUnits={setUnits} rocket={rocket} />;
       break;
     default:
       body = (
@@ -266,14 +267,15 @@ function Settings({
   setTheme,
   units,
   setUnits,
-  rocketFile,
+  rocket,
 }: {
   theme: ReturnType<typeof usePrefs>["theme"];
   setTheme: ReturnType<typeof usePrefs>["setTheme"];
   units: ReturnType<typeof usePrefs>["units"];
   setUnits: ReturnType<typeof usePrefs>["setUnits"];
-  rocketFile: string | null;
+  rocket: ReturnType<typeof useRocket>;
 }) {
+  const rocketFile = rocket?.source_file ?? null;
   return (
     <div className="view view-settings">
       <Card title="Display" icon={Icon.gear()}>
@@ -312,6 +314,21 @@ function Settings({
         </dl>
         <div className="foot-note">Phase names: {Object.values(PHASE_TEXT).join(" · ")}</div>
       </Card>
+      {rocket && (
+        <Card title="About" icon={Icon.rocket()} className="about-card">
+          <div className="about-body">
+            <LogoScene rocket={rocket} />
+            <div className="about-text">
+              <b>UTD Comet Rocketry · SRAD Ground Station</b>
+              <span className="dim">{rocket.name}</span>
+              <span className="dim small">
+                The club logo, live: the globe spins while our rocket (shape from {rocket.source_file}, radius widened so it reads) orbits with Temoc
+                riding along. ASCII rendering idea from alishsharma17/Ascii-Flower-Bouquet-.
+              </span>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

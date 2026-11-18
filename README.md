@@ -64,6 +64,26 @@ cd backend && .venv/bin/python -m ground_station --mode LIVE --serial-port /dev/
 Add `--framing xbee_api` to the fake and `--serial-framing xbee_api` to the ground station
 to test a Digi XBee receiver in API mode (including RSSI).
 
+## Just for fun: ASCII rocket
+
+A spinning ASCII-art version of the rocket, generated from the OpenRocket file:
+
+```bash
+backend/.venv/bin/python -m ground_station.tools.ascii_rocket          # Ctrl+C to stop
+backend/.venv/bin/python -m ground_station.tools.ascii_rocket --once   # single frame
+```
+
+In the dashboard, Configuration → About shows the Comet Rocketry logo as a live ASCII scene: the
+globe spins while our rocket (shape from the `.ork`) orbits it with a flame and a fading trail,
+Temoc riding on top. It is decorative only, runs only while that page is open, and never appears
+on the flight-data screens. The globe uses a coarse hand-drawn land map (`frontend/src/v3/worldMap.ts`).
+`scripts/run-pi.sh` plays the terminal version for 4 s at startup (skip with `GS_NO_SPLASH=1`).
+
+Temoc and the Comet Rocketry logo are pre-converted to colour ASCII by
+`scripts/make_ascii_art.py` (needs Pillow, only when regenerating). The Temoc source image is
+UT Dallas artwork and is not stored in this repo; only the generated text is.
+Idea from [alishsharma17/Ascii-Flower-Bouquet-](https://github.com/alishsharma17/Ascii-Flower-Bouquet-).
+
 ## Continuous integration
 
 Every pull request and every push to `main` runs [GitHub Actions](.github/workflows/ci.yml):
