@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AsciiRocket } from "./AsciiRocket";
 import type { Phase, TelemetryFrame } from "../types";
 import type { RocketModel } from "../rocket";
 import type { UnitFmt } from "../prefs";
@@ -188,7 +189,11 @@ export function RocketStatusCard({
   return (
     <Card title="Live Rocket Status" icon={Icon.rocket()} className="rocket-card">
       <div className="rocket-card-body">
-        <VerticalRocket rocket={rocket} phase={d?.phase} />
+        {state === "nodata" && rocket ? (
+          <AsciiRocket rocket={rocket} cols={20} rows={38} className="ar-card" />
+        ) : (
+          <VerticalRocket rocket={rocket} phase={d?.phase} />
+        )}
         <div className="rocket-info">
           <div className={`status-pill pill-${st.cls}`}>
             <span className="dot" /> {st.text}

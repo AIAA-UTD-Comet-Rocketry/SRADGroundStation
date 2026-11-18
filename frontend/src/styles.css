@@ -362,3 +362,13 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
   .dash-row1, .dash-row2, .view, .view-telemetry, .view-map, .view-systems, .view-mission, .view-logs, .view-settings { grid-template-columns: 1fr; }
   .top { flex-wrap: wrap; }
 }
+
+/* ---------------- ASCII rocket (idle / about only) ---------------- */
+.ascii-rocket { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--muted); user-select: none; white-space: pre; }
+.ascii-rocket .ar-nose { color: var(--accent); }
+.ascii-rocket .ar-body { color: var(--text); }
+.ascii-rocket .ar-fin { color: var(--c-vel); }
+.ar-card { font-size: 6px; line-height: 6px; justify-self: center; }
+.ar-about { font-size: 7px; line-height: 7px; }
+.about-body { display: flex; gap: 20px; align-items: center; }
+.about-text { display: flex; flex-direction: column; gap: 6px; }

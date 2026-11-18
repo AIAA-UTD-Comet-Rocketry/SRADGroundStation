@@ -64,6 +64,19 @@ cd backend && .venv/bin/python -m ground_station --mode LIVE --serial-port /dev/
 Add `--framing xbee_api` to the fake and `--serial-framing xbee_api` to the ground station
 to test a Digi XBee receiver in API mode (including RSSI).
 
+## Just for fun: ASCII rocket
+
+A spinning ASCII-art version of the rocket, generated from the OpenRocket file:
+
+```bash
+backend/.venv/bin/python -m ground_station.tools.ascii_rocket          # Ctrl+C to stop
+backend/.venv/bin/python -m ground_station.tools.ascii_rocket --once   # single frame
+```
+
+The dashboard shows it in the Live Rocket Status card while no telemetry has arrived, and in
+Configuration → About. It is decorative only and disappears as soon as data comes in.
+Idea from [alishsharma17/Ascii-Flower-Bouquet-](https://github.com/alishsharma17/Ascii-Flower-Bouquet-).
+
 ## Continuous integration
 
 Every pull request and every push to `main` runs [GitHub Actions](.github/workflows/ci.yml):
