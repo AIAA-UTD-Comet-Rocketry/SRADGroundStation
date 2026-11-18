@@ -168,7 +168,7 @@ def main():
     ap.add_argument("--temoc-cols", type=int, default=34)
     ap.add_argument("--logo-cols", type=int, default=28)
     ap.add_argument("--rider", type=Path, help="Temoc image for the About-page rider (defaults to --temoc)")
-    ap.add_argument("--rider-cols", type=int, default=26)
+    ap.add_argument("--rider-cols", type=int, default=20)
     args = ap.parse_args()
 
     t_chars, t_keys = convert(args.temoc, args.temoc_cols, TEMOC_PALETTE, outline_key="k")
