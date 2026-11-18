@@ -24,3 +24,18 @@ def test_ascii_rocket_draws_nose_up_with_fins_at_the_bottom():
 def test_ascii_rocket_handles_empty_model():
     lines, _ = render([], 1.0, 0.0, 10, 5)
     assert lines == [""] * 5
+
+
+def test_terminal_scene_renders_title_rocket_and_temoc():
+    import re
+
+    from ground_station.tools.ascii_rocket import Scene
+
+    scene = Scene(load_rocket(ORK).to_json(), ["UTD Comet Rocketry", "4.06 m  ·  155 mm"])
+    text = re.sub(r"\x1b\[[0-9;]*[mK]", "", scene.frame(1.0, 120, 40))
+    lines = text.split("\n")
+    assert len(lines) == 40
+    assert lines[1].strip().startswith("UTD Comet Rocketry")
+    assert "4.06 m  ·  155 mm" in lines[2]  # stars never land inside the title block
+    assert "UTD |" in text  # Temoc's jersey
+    assert "@" in text  # rocket / flame drawn

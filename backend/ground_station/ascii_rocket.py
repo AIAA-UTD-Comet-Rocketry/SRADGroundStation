@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from collections.abc import Callable
 from typing import Any
 
 SHADE = " .:-=+*#%@"
@@ -104,6 +105,30 @@ def _inside(x: float, y: float, poly: list[tuple[float, float]]) -> bool:
     return hit
 
 
+def projector(
+    points: list[Point], length: float, cols: int, rows: int, tilt: float = 0.0, tail: float = 0.0
+) -> tuple[float, Callable[[float, float], tuple[int, int]]]:
+    """Fit the rocket (plus `tail` metres behind it) into the grid.
+
+    Returns (rows per metre, cell) where cell(s, u) maps a point `s` metres from the rocket's
+    middle along the axis (positive = toward the nose) and `u` metres sideways to (col, row).
+    Shared by render() and anything drawn around the rocket (e.g. the exhaust).
+    """
+    st, ct = math.sin(tilt), math.cos(tilt)
+    span = max((math.hypot(p.y, p.z) for p in points), default=0.1)
+    half = length / 2 + tail / 2
+    shift = -tail / 2  # centre rocket + tail, not just the rocket
+    # A character is ~2x taller than wide, so one metre is 2x more columns than rows.
+    scale = min((cols - 2) / (4 * (half * abs(st) + span * ct)), (rows - 1) / (2 * (half * ct + span * abs(st))))
+    cx, cy = cols / 2, rows / 2
+
+    def cell(s: float, u: float) -> tuple[int, int]:
+        a = s - shift
+        return math.floor(cx + (a * st + u * ct) * scale * 2), math.floor(cy - (a * ct - u * st) * scale)
+
+    return scale, cell
+
+
 def render(
     points: list[Point], length: float, roll: float, cols: int, rows: int, tilt: float = 0.0, tail: float = 0.0
 ) -> tuple[list[str], list[list[int]]]:
@@ -120,21 +145,14 @@ def render(
 
     st, ct = math.sin(tilt), math.cos(tilt)
     cr, sr = math.cos(roll), math.sin(roll)
-    span = max(math.hypot(p.y, p.z) for p in points)
-    half = length / 2 + tail / 2
-    shift = -tail / 2
-    # A character is ~2x taller than wide, so one metre is 2x more columns than rows.
-    scale = min((cols - 2) / (4 * (half * abs(st) + span * ct)), (rows - 1) / (2 * (half * ct + span * abs(st))))
-    cx, cy = cols / 2, rows / 2
+    _, cell = projector(points, length, cols, rows, tilt, tail)
     lx, ly, lz = LIGHT
     mid = length / 2
 
     for p in points:
         u = p.y * cr - p.z * sr  # sideways after roll
         z = p.y * sr + p.z * cr  # toward the viewer
-        a = (mid - p.x) - shift  # along the axis, toward the nose
-        col = math.floor(cx + (a * st + u * ct) * scale * 2)
-        row = math.floor(cy - (a * ct - u * st) * scale)
+        col, row = cell(mid - p.x, u)
         if not (0 <= row < rows and 0 <= col < cols) or z <= zbuf[row][col]:
             continue
         ny = p.ny * cr - p.nz * sr
