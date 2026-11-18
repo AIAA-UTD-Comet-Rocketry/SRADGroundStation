@@ -104,8 +104,11 @@ def _inside(x: float, y: float, poly: list[tuple[float, float]]) -> bool:
     return hit
 
 
-def render(points: list[Point], length: float, roll: float, cols: int, rows: int) -> tuple[list[str], list[list[int]]]:
-    """One frame: rocket standing nose-up, rolled `roll` radians about its own axis.
+def render(
+    points: list[Point], length: float, roll: float, cols: int, rows: int, tilt: float = 0.0, tail: float = 0.0
+) -> tuple[list[str], list[list[int]]]:
+    """One frame: rocket rolled `roll` rad about its own axis, leaning `tilt` rad from vertical
+    (positive = nose to the upper right), with `tail` metres of empty room left behind it.
 
     Returns (lines, part-per-cell); cells with no surface have part -1.
     """
@@ -115,25 +118,29 @@ def render(points: list[Point], length: float, roll: float, cols: int, rows: int
     if not points:
         return ["" for _ in range(rows)], parts
 
+    st, ct = math.sin(tilt), math.cos(tilt)
     cr, sr = math.cos(roll), math.sin(roll)
     span = max(math.hypot(p.y, p.z) for p in points)
+    half = length / 2 + tail / 2
+    shift = -tail / 2
     # A character is ~2x taller than wide, so one metre is 2x more columns than rows.
-    scale = min((rows - 1) / length, (cols - 2) / (4 * span))
-    top = (rows - length * scale) / 2
-    cx = cols / 2
+    scale = min((cols - 2) / (4 * (half * abs(st) + span * ct)), (rows - 1) / (2 * (half * ct + span * abs(st))))
+    cx, cy = cols / 2, rows / 2
     lx, ly, lz = LIGHT
+    mid = length / 2
 
     for p in points:
-        # roll about the rocket's own (vertical) axis; z is toward the viewer
-        y = p.y * cr - p.z * sr
-        z = p.y * sr + p.z * cr
-        col = int(cx + y * scale * 2)
-        row = int(top + p.x * scale)
+        u = p.y * cr - p.z * sr  # sideways after roll
+        z = p.y * sr + p.z * cr  # toward the viewer
+        a = (mid - p.x) - shift  # along the axis, toward the nose
+        col = math.floor(cx + (a * st + u * ct) * scale * 2)
+        row = math.floor(cy - (a * ct - u * st) * scale)
         if not (0 <= row < rows and 0 <= col < cols) or z <= zbuf[row][col]:
             continue
         ny = p.ny * cr - p.nz * sr
         nz = p.ny * sr + p.nz * cr
-        dot = ny * lx - p.nx * ly + nz * lz  # axis runs nose-down the screen, so up = -x
+        na = -p.nx
+        dot = (na * st + ny * ct) * lx + (na * ct - ny * st) * ly + nz * lz
         if p.two_sided and dot < 0:
             dot = -dot * 0.6
         b = min(0.999, max(0.0, 0.08 + 0.85 * dot))

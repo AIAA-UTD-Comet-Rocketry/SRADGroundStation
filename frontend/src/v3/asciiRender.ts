@@ -5,7 +5,7 @@ import type { RocketModel } from "../rocket";
 
 export const SHADE = " .:-=+*#%@";
 /** Real L3 rockets are ~25x longer than wide; widen the radius so the shape reads at character size. */
-const RADIAL_SCALE = 1.7;
+export const RADIAL_SCALE = 1.7;
 const LIGHT = (() => {
   const l = [-0.6, 0.35, 0.72];
   const n = Math.hypot(...l);
@@ -89,37 +89,60 @@ export function buildPoints(rocket: RocketModel, axialSamples = 260, ringSamples
   return pts;
 }
 
-/** One frame: rocket nose-up, rolled `roll` rad about its own axis. Returns chars + part per cell (-1 = empty). */
-export function renderFrame(points: Pt[], length: number, roll: number, cols: number, rows: number) {
+export interface FrameOpts {
+  /** lean from vertical, radians; positive = nose toward the upper right */
+  tilt?: number;
+  /** extra room behind the tail (metres along the axis), e.g. for a flame */
+  tail?: number;
+}
+
+/**
+ * One frame: rocket rolled `roll` rad about its own axis, leaning `tilt` from vertical.
+ * Returns chars + part per cell (-1 = empty) and `cell(s, u)`, which maps a point `s` metres
+ * from the rocket's middle along the axis (positive = toward the nose) and `u` metres sideways
+ * to a [col, row], so callers can draw extras (flame) in the same frame.
+ */
+export function renderFrame(points: Pt[], length: number, roll: number, cols: number, rows: number, opts: FrameOpts = {}) {
+  const tilt = opts.tilt ?? 0;
+  const tail = opts.tail ?? 0;
   const chars: string[][] = Array.from({ length: rows }, () => Array<string>(cols).fill(" "));
   const parts: Int8Array[] = Array.from({ length: rows }, () => new Int8Array(cols).fill(-1));
   const zbuf: Float32Array[] = Array.from({ length: rows }, () => new Float32Array(cols).fill(-1e9));
-  if (!points.length) return { chars, parts };
+
+  const st = Math.sin(tilt);
+  const ct = Math.cos(tilt);
+  let span = 0;
+  for (const p of points) span = Math.max(span, Math.hypot(p.y, p.z));
+  const half = length / 2 + tail / 2; // fitted half-extent along the axis
+  const shift = -tail / 2; // centre the rocket + tail, not just the rocket
+  // A character is ~2x taller than wide, so one metre is 2x more columns than rows.
+  const scale = Math.min((cols - 2) / (4 * (half * Math.abs(st) + span * ct) || 1), (rows - 1) / (2 * (half * ct + span * Math.abs(st)) || 1));
+  const cx = cols / 2;
+  const cy = rows / 2;
+  const cell = (s: number, u: number): [number, number] => {
+    const a = s - shift;
+    return [Math.floor(cx + (a * st + u * ct) * scale * 2), Math.floor(cy - (a * ct - u * st) * scale)];
+  };
+  if (!points.length) return { chars, parts, cell, scale };
 
   const cr = Math.cos(roll);
   const sr = Math.sin(roll);
-  let span = 0;
-  for (const p of points) span = Math.max(span, Math.hypot(p.y, p.z));
-  // A character is ~2x taller than wide, so one metre is 2x more columns than rows.
-  const scale = Math.min((rows - 1) / length, (cols - 2) / (4 * span));
-  const top = (rows - length * scale) / 2;
-  const cx = cols / 2;
   const [lx, ly, lz] = LIGHT;
-
+  const mid = length / 2;
   for (const p of points) {
-    const y = p.y * cr - p.z * sr;
-    const z = p.y * sr + p.z * cr;
-    const col = Math.floor(cx + y * scale * 2);
-    const row = Math.floor(top + p.x * scale);
+    const u = p.y * cr - p.z * sr; // sideways after roll
+    const z = p.y * sr + p.z * cr; // toward the viewer
+    const [col, row] = cell(mid - p.x, u);
     if (row < 0 || row >= rows || col < 0 || col >= cols || z <= zbuf[row][col]) continue;
     const ny = p.ny * cr - p.nz * sr;
     const nz = p.ny * sr + p.nz * cr;
-    let dot = ny * lx - p.nx * ly + nz * lz; // nose is up the screen, so up = -x
+    const na = -p.nx; // normal component along the axis (toward the nose)
+    let dot = (na * st + ny * ct) * lx + (na * ct - ny * st) * ly + nz * lz;
     if (p.twoSided && dot < 0) dot = -dot * 0.6;
     const b = Math.min(0.999, Math.max(0, 0.08 + 0.85 * dot));
     zbuf[row][col] = z;
     chars[row][col] = SHADE[1 + Math.floor(b * (SHADE.length - 1))];
     parts[row][col] = p.part;
   }
-  return { chars, parts };
+  return { chars, parts, cell, scale };
 }

@@ -317,13 +317,13 @@ function Settings({
       {rocket && (
         <Card title="About" icon={Icon.rocket()} className="about-card">
           <div className="about-body">
-            <AsciiRocket rocket={rocket} cols={30} rows={62} className="ar-about" />
+            <AsciiRocket rocket={rocket} cols={120} rows={46} className="ar-about" />
             <div className="about-text">
               <b>UTD Comet Rocketry · SRAD Ground Station</b>
               <span className="dim">{rocket.name}</span>
               <span className="dim small">
-                Spun from the outline in {rocket.source_file} (radius widened so it reads at character size). ASCII rendering idea from
-                alishsharma17/Ascii-Flower-Bouquet-.
+                Rocket shape from {rocket.source_file} (radius widened so it reads at character size), Temoc watching from the corner. ASCII
+                rendering idea from alishsharma17/Ascii-Flower-Bouquet-.
               </span>
             </div>
           </div>

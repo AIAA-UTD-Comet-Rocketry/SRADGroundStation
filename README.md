@@ -73,8 +73,8 @@ backend/.venv/bin/python -m ground_station.tools.ascii_rocket          # Ctrl+C 
 backend/.venv/bin/python -m ground_station.tools.ascii_rocket --once   # single frame
 ```
 
-The dashboard shows it in the Live Rocket Status card while no telemetry has arrived, and in
-Configuration → About. It is decorative only and disappears as soon as data comes in.
+In the dashboard, Configuration → About shows the rocket climbing at 45° with a flame, drifting
+stars and an ASCII Temoc. It is decorative only and never appears on the flight-data screens.
 Idea from [alishsharma17/Ascii-Flower-Bouquet-](https://github.com/alishsharma17/Ascii-Flower-Bouquet-).
 
 ## Continuous integration
