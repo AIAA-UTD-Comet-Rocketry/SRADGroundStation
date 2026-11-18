@@ -48,8 +48,9 @@ const PAL = [
   "#14532d", "#166534", "#15803d", "#22c55e", "#4ade80", // 44-48 rocket lower body (green)
   "#7c2d12", // 49 letter backing (unused colour; backing cells are blank)
   "#e0f2fe", "#7dd3fc", "#38bdf8", "#0284c7", // 50-53 comet head -> tail
+  "#ef4444", "#dc2626", // 54-55 hair flame tips (red)
 ]; // prettier-ignore
-const C_RIM = 4, C_STAR = 5, C_OCEAN = 8, C_LAND = 13, C_ICE = 17, C_ATMO = 19, C_WHITE = 20, C_FIN = 25, C_FLAME = 30, C_TRAIL = 34, C_GREEN = 44, C_LETTER_BG = 49, C_COMET = 50; // prettier-ignore
+const C_RIM = 4, C_STAR = 5, C_OCEAN = 8, C_LAND = 13, C_ICE = 17, C_ATMO = 19, C_WHITE = 20, C_FIN = 25, C_FLAME = 30, C_TRAIL = 34, C_GREEN = 44, C_LETTER_BG = 49, C_COMET = 50, C_HAIR_RED = 54; // prettier-ignore
 const TEMOC_COL: Record<string, number> = { y: 38, o: 39, s: 40, S: 41, k: 42, w: 43 };
 
 // 5x7 block font for the ring lettering; each "#" is drawn as a 2x1-cell block (square on screen).
@@ -344,8 +345,14 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
           let ch = line[j];
           const key = keys[j];
           if (ch === " " || !key || key === " ") continue;
-          if (i < hairRows && (key === "y" || key === "o") && flick() < 0.18) ch = "#%@*"[Math.floor(flick() * 4)];
-          put(seatX + (j - half) / 2, rowY, ch, TEMOC_COL[key] ?? C_RIM, P.z + radius + 1, true);
+          let color = TEMOC_COL[key] ?? C_RIM;
+          if (i < hairRows && (key === "y" || key === "o")) {
+            if (flick() < 0.18) ch = "#%@*"[Math.floor(flick() * 4)];
+            // fire: red at the tips, orange, then yellow at the roots, with heat rippling upward over time
+            const heat = i / hairRows + 0.28 * Math.sin(t * 7 - i * 0.9 + j * 0.6) + 0.12 * (flick() - 0.5);
+            color = heat < 0.3 ? C_HAIR_RED + (flick() < 0.5 ? 1 : 0) : heat < 0.62 ? TEMOC_COL.o : TEMOC_COL.y;
+          }
+          put(seatX + (j - half) / 2, rowY, ch, color, P.z + radius + 1, true);
         }
       });
 
