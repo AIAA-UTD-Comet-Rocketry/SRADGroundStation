@@ -28,7 +28,7 @@ const AXIAL_TILT = 0.4; // north pole tipped toward the viewer
 const ORBIT = { a: 21.5, b: 7.5, tilt: (32 * Math.PI) / 180, speed: 0.5 }; // ellipse around the globe
 const ROCKET_LEN = 22; // rows
 const ROCKET_FAT = 2.3; // extra radial widening on top of the renderer's
-const TRAIL_SPAN = 2.6; // radians of orbit the trail covers
+const TRAIL_SPAN = 1.6; // radians of orbit the trail covers
 
 // ---- palette (fixed: the scene is a "screen" of space in both themes) ----
 const SKY = "#0b1238";
@@ -262,22 +262,42 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
       }
 
       // ---- rocket on its orbit ----
+      // Everything follows the orbit curve: nose on the orbit, tail on the orbit one rocket-length
+      // (of arc) behind it, flame bending along the orbit from the tail, and the trail carrying on
+      // from the end of the flame. So there is never a gap between rocket, flame and trail.
+      // Lengths are measured in 3D: at the ends of the orbit it moves mostly in depth, so the rocket
+      // is foreshortened there instead of cutting through the globe.
+      const walkBack = (from: number, dist: number) => {
+        let th1 = from;
+        let walked = 0;
+        let prev = orbitAt(from);
+        while (walked < dist && th1 > from - Math.PI) {
+          th1 -= 0.004;
+          const q = orbitAt(th1);
+          walked += Math.hypot(q.x - prev.x, q.y - prev.y, q.z - prev.z);
+          prev = q;
+        }
+        return th1;
+      };
       const th = t * ORBIT.speed;
-      const P = orbitAt(th);
-      const P2 = orbitAt(th + 0.01);
-      let Tx = P2.x - P.x, Ty = P2.y - P.y; // prettier-ignore
-      const tl = Math.hypot(Tx, Ty) || 1;
-      Tx /= tl;
-      Ty /= tl;
+      const head = orbitAt(th);
+      const persp = 1 + (head.z / (GLOBE.r * 1.4)) * 0.18; // a little bigger on the near side
+      const thTail = walkBack(th, ROCKET_LEN * persp);
+      const tail = orbitAt(thTail);
+      let Tx = head.x - tail.x, Ty = head.y - tail.y; // prettier-ignore
+      const len = Math.hypot(Tx, Ty) || 1; // shorter on the tight ends of the orbit: reads as turning
+      Tx /= len;
+      Ty /= len;
       const Nx = -Ty, Ny = Tx; // prettier-ignore
-      const persp = 1 + (P.z / (GLOBE.r * 1.4)) * 0.18; // a little bigger on the near side
+      const P = { x: (head.x + tail.x) / 2, y: (head.y + tail.y) / 2, z: (head.z + tail.z) / 2 };
+      const kAxial = len / rocket.length_m;
       const k = kRocket * persp;
       const roll = t * 1.3;
       const cr = Math.cos(roll), sr = Math.sin(roll); // prettier-ignore
       let radius = 0;
       topRow.fill(9999);
       for (const p of points as Pt[]) {
-        const a = (mid - p.x) * k;
+        const a = (mid - p.x) * kAxial;
         const u = (p.y * cr - p.z * sr) * k * ROCKET_FAT;
         const w = (p.y * sr + p.z * cr) * k * ROCKET_FAT;
         radius = Math.max(radius, Math.abs(u));
@@ -292,32 +312,46 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
         const Y = P.y + a * Ty + u * Ny;
         const col = Math.floor(CX + X * 2);
         if (col >= 0 && col < COLS) topRow[col] = Math.min(topRow[col], Math.floor(CY - Y)); // for seating Temoc
-        put(X, Y, SHADE[1 + Math.floor(b * (SHADE.length - 1))], base + Math.min(4, Math.floor(b * 5)), P.z + w, true);
+        const along = a / len + 0.5; // 0 at the tail, 1 at the nose: nose goes behind the globe first
+        put(X, Y, SHADE[1 + Math.floor(b * (SHADE.length - 1))], base + Math.min(4, Math.floor(b * 5)), tail.z + (head.z - tail.z) * along + w, true);
       }
 
-      // ---- flame out of the tail ----
-      const tailX = P.x - (ROCKET_LEN / 2) * persp * Tx;
-      const tailY = P.y - (ROCKET_LEN / 2) * persp * Ty;
-      const flameLen = 7 * persp * (0.85 + 0.15 * Math.sin(t * 23) * Math.sin(t * 7));
+      // ---- flame: from the tail, bending along the orbit ----
+      const FLAME = 7 * persp;
+      const flameLen = FLAME * (0.85 + 0.15 * Math.sin(t * 23) * Math.sin(t * 7));
       const nozzle = radius * 0.8 + 0.4;
+      let fth = thTail;
+      let fq = tail;
+      let walked = 0;
       for (let d = 0; d < flameLen; d += 0.35) {
+        while (walked < d) {
+          fth -= 0.004;
+          const q = orbitAt(fth);
+          walked += Math.hypot(q.x - fq.x, q.y - fq.y, q.z - fq.z);
+          fq = q;
+        }
+        const ahead = orbitAt(fth + 0.01);
+        let fx = ahead.x - fq.x, fy = ahead.y - fq.y; // prettier-ignore
+        const fl = Math.hypot(fx, fy) || 1;
+        fx /= fl;
+        fy /= fl;
         const kk = d / flameLen;
         const w = nozzle * (1 + 0.6 * Math.sin(Math.PI * Math.min(1, kk * 1.6))) * (1 - kk ** 1.8) * (1 + 0.3 * (flick() - 0.5)) + 0.15;
         for (let u = -w; u <= w; u += 0.35) {
           const heat = 1 - kk - 0.35 * Math.abs(u / w) + 0.25 * (flick() - 0.5);
           if (heat < 0.05) continue;
           const level = heat > 0.7 ? 0 : heat > 0.45 ? 1 : heat > 0.22 ? 2 : 3;
-          put(tailX - d * Tx + u * Nx, tailY - d * Ty + u * Ny, "@#*:"[level], C_FLAME + level, P.z + 0.5, true);
+          put(fq.x - fy * u, fq.y + fx * u, "@#*:"[level], C_FLAME + level, fq.z + 0.5, true);
         }
       }
 
-      // ---- trail: the orbit behind the flame, fading with age (draws the logo's swoosh) ----
-      const back = (ROCKET_LEN / 2 + flameLen) / (tl / 0.01);
-      for (let dth = back; dth < TRAIL_SPAN; dth += 0.008) {
-        const age = (dth - back) / (TRAIL_SPAN - back);
-        const Q = orbitAt(th - dth);
+      // ---- trail: carries on along the orbit from under the end of the flame, fading with age ----
+      const trailStart = walkBack(thTail, FLAME * 0.85 * 0.75); // starts tucked under the shortest flame
+      for (let dth = 0; dth < TRAIL_SPAN; dth += 0.008) {
+        const age = dth / TRAIL_SPAN;
+        const Q = orbitAt(trailStart - dth);
         const width = 1.5 * (1 - age) + 0.2;
-        const Q2 = orbitAt(th - dth + 0.01);
+        const Q2 = orbitAt(trailStart - dth + 0.01);
         let qx = Q2.x - Q.x, qy = Q2.y - Q.y; // prettier-ignore
         const ql = Math.hypot(qx, qy) || 1;
         qx /= ql;
@@ -331,7 +365,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
 
       // ---- Temoc riding (sits on the top side of the rocket, just behind the middle) ----
       // seat = the topmost rocket cell in the column under his middle, so he sits on it at any angle
-      const seatX = P.x - ROCKET_LEN * 0.22 * persp * Tx; // behind the middle, so the nose half shows
+      const seatX = P.x - len * 0.22 * Tx; // behind the middle, so the nose half shows
       const seatCol = Math.floor(CX + seatX * 2);
       const top = seatCol >= 0 && seatCol < COLS ? topRow[seatCol] : 9999;
       const seatY = top < 9999 ? CY - top - 0.5 : P.y + radius;
