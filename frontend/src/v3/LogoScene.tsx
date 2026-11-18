@@ -28,7 +28,7 @@ const AXIAL_TILT = 0.4; // north pole tipped toward the viewer
 const ORBIT = { a: 21.5, b: 7.5, tilt: (32 * Math.PI) / 180, speed: 0.5 }; // ellipse around the globe
 const ROCKET_LEN = 22; // rows
 const ROCKET_FAT = 2.3; // extra radial widening on top of the renderer's
-const TRAIL_SPAN = 2.6; // radians of orbit the trail covers
+const TRAIL_SPAN = 1.6; // radians of orbit the trail covers
 
 // ---- palette (fixed: the scene is a "screen" of space in both themes) ----
 const SKY = "#0b1238";
@@ -265,6 +265,8 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
       // Everything follows the orbit curve: nose on the orbit, tail on the orbit one rocket-length
       // (of arc) behind it, flame bending along the orbit from the tail, and the trail carrying on
       // from the end of the flame. So there is never a gap between rocket, flame and trail.
+      // Lengths are measured in 3D: at the ends of the orbit it moves mostly in depth, so the rocket
+      // is foreshortened there instead of cutting through the globe.
       const walkBack = (from: number, dist: number) => {
         let th1 = from;
         let walked = 0;
@@ -272,7 +274,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
         while (walked < dist && th1 > from - Math.PI) {
           th1 -= 0.004;
           const q = orbitAt(th1);
-          walked += Math.hypot(q.x - prev.x, q.y - prev.y);
+          walked += Math.hypot(q.x - prev.x, q.y - prev.y, q.z - prev.z);
           prev = q;
         }
         return th1;
@@ -325,7 +327,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
         while (walked < d) {
           fth -= 0.004;
           const q = orbitAt(fth);
-          walked += Math.hypot(q.x - fq.x, q.y - fq.y);
+          walked += Math.hypot(q.x - fq.x, q.y - fq.y, q.z - fq.z);
           fq = q;
         }
         const ahead = orbitAt(fth + 0.01);
