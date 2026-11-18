@@ -1,11 +1,13 @@
 """Regenerate the colour ASCII art (Temoc + Comet Rocketry logo) used by the terminal splash.
 
 Only needed when changing the art. Needs Pillow (`pip install pillow`); the app itself
-does not. The source images are not stored in the repo (Temoc is UT Dallas' mascot art):
+does not. Source images are not stored in the repo, only the generated text (Temoc is UT Dallas'
+mascot; the club has UTD's permission to use him):
 
     python3 scripts/make_ascii_art.py --temoc ~/Downloads/temoc.png
 
-Writes backend/ground_station/ascii_art.py (used by the terminal splash). Each piece of
+Writes backend/ground_station/ascii_art.py (terminal splash) and frontend/src/v3/temocRider.ts
+(About page). Each piece of
 art is two parallel string lists: `chars` (what to print) and `keys` (one colour key per
 character; space = transparent). Colours per key are defined by each consumer.
 """
@@ -111,6 +113,47 @@ def convert(path: Path, cols: int, palette: dict, outline_key: str | None, bg_bl
     return ["".join(x).rstrip() for x in chars], ["".join(x).rstrip() for x in keys]
 
 
+FLAT_FILL = {"y": "#%@", "o": "%#", "s": "@%#*", "S": "#*+", "w": "@"}
+
+
+def convert_flat(path: Path, cols: int, palette: dict, dark_min: float = 0.42):
+    """Solid-fill variant for small sizes: each cell takes its colour from the light pixels only,
+    and only strong dark features (eyes, mouth, outline) become 'k'. Reads better than
+    edge-following outlines when the art is only ~25 characters wide."""
+    im = Image.open(path).convert("RGBA")
+    w, h = im.size
+    rows = round(cols * h / w / 2.0)
+    px = im.load()
+    cw, ch = w / cols, h / rows
+    fills = [k for k in palette if k != "k"]
+
+    def lum(p):
+        return 0.3 * p[0] + 0.59 * p[1] + 0.11 * p[2]
+
+    out_c, out_k = [], []
+    for r in range(rows):
+        lc, lk = "", ""
+        for c in range(cols):
+            pix = list(cell_pixels(px, c * cw, r * ch, (c + 1) * cw, (r + 1) * ch))
+            op = [p[:3] for p in pix if p[3] > 128]
+            if not op or len(op) / len(pix) < 0.45:
+                lc, lk = lc + " ", lk + " "
+                continue
+            dark = sum(1 for p in op if lum(p) < 80) / len(op)
+            light = [p for p in op if lum(p) >= 80] or op
+            avg = tuple(sum(p[i] for p in light) / len(light) for i in range(3))
+            k = min(fills, key=lambda kk: sum((a - b) ** 2 for a, b in zip(avg, palette[kk])))
+            if dark > dark_min:
+                lc, lk = lc + ("o" if k in "sS" else "#"), lk + "k"
+                continue
+            ramp = FLAT_FILL[k]
+            lightness = colorsys.rgb_to_hls(*(v / 255 for v in avg))[1]
+            lc, lk = lc + ramp[min(len(ramp) - 1, int((1 - lightness) * len(ramp) * 1.3))], lk + k
+        out_c.append(lc.rstrip())
+        out_k.append(lk[: len(lc.rstrip())])
+    return out_c, out_k
+
+
 def overlay(chars, keys, row, col, text, key):
     line, kline = list(chars[row].ljust(col + len(text))), list(keys[row].ljust(col + len(text)))
     for i, t in enumerate(text):
@@ -124,6 +167,8 @@ def main():
     ap.add_argument("--logo", type=Path, default=ROOT / "frontend/public/comet-logo.png")
     ap.add_argument("--temoc-cols", type=int, default=34)
     ap.add_argument("--logo-cols", type=int, default=28)
+    ap.add_argument("--rider", type=Path, help="Temoc image for the About-page rider (defaults to --temoc)")
+    ap.add_argument("--rider-cols", type=int, default=26)
     args = ap.parse_args()
 
     t_chars, t_keys = convert(args.temoc, args.temoc_cols, TEMOC_PALETTE, outline_key="k")
@@ -140,6 +185,16 @@ def main():
         py.append(f"{name}_CHARS = {json.dumps(c, indent=4)}\n")
         py.append(f"{name}_KEYS = {json.dumps(k, indent=4)}\n")
     (ROOT / "backend/ground_station/ascii_art.py").write_text("\n".join(py))
+    r_chars, r_keys = convert_flat(args.rider or args.temoc, args.rider_cols, TEMOC_PALETTE)
+    ts = [
+        f"// {header}",
+        "// Temoc riding the rocket on the About page (flat-fill conversion; keys: k y o s S w).",
+        f"export const TEMOC_RIDER = {json.dumps({'chars': r_chars, 'keys': r_keys}, indent=2)};",
+        "",
+    ]
+    (ROOT / "frontend/src/v3/temocRider.ts").write_text("\n".join(ts))
+    art["TEMOC_RIDER"] = (r_chars, r_keys)
+
     for name, (c, k) in art.items():
         print(name)
         for a in c:

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { RocketModel } from "../rocket";
 import { SHADE, buildPoints, type Pt } from "./asciiRender";
+import { TEMOC_RIDER } from "./temocRider";
 import { WORLD_MAP } from "./worldMap";
 
 /*
@@ -19,17 +20,18 @@ const CX = COLS / 2;
 const CY = ROWS / 2;
 const FPS = 12;
 
-const R_OUT = 38.5; // ring outer edge
-const R_IN = 31; // ring inner edge
-const GLOBE = { x: -6, y: -5, r: 17 };
+const R_OUT = 39; // ring outer edge
+const R_IN = 29; // ring inner edge
+const GLOBE = { x: -5, y: -4, r: 16 };
 const GLOBE_SPIN = 0.22; // rad/s
 const AXIAL_TILT = 0.4; // north pole tipped toward the viewer
-const ORBIT = { a: 23.5, b: 8, tilt: (32 * Math.PI) / 180, speed: 0.5 }; // ellipse around the globe
-const ROCKET_LEN = 17; // rows
+const ORBIT = { a: 21.5, b: 7.5, tilt: (32 * Math.PI) / 180, speed: 0.5 }; // ellipse around the globe
+const ROCKET_LEN = 22; // rows
 const ROCKET_FAT = 2.3; // extra radial widening on top of the renderer's
 const TRAIL_SPAN = 2.6; // radians of orbit the trail covers
 
-// ---- palette (fixed: the scene is a dark "screen" in both themes) ----
+// ---- palette (fixed: the scene is a "screen" of space in both themes) ----
+const SKY = "#0b1238";
 const PAL = [
   "#c2410c", "#ea580c", "#f97316", "#fb923c", // 0-3 ring
   "#f8fafc", // 4 rim / letters
@@ -38,30 +40,38 @@ const PAL = [
   "#14532d", "#15803d", "#22c55e", "#4ade80", // 13-16 land
   "#94a3b8", "#e2e8f0", // 17-18 ice
   "#7dd3fc", // 19 atmosphere
-  "#a16207", "#ca8a04", "#eab308", "#facc15", "#fde047", // 20-24 rocket body (gold, like the logo)
-  "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", // 25-29 nose + fins
+  "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#ffffff", // 20-24 rocket upper body (white)
+  "#9a3412", "#c2410c", "#ea580c", "#f97316", "#fdba74", // 25-29 fins (orange)
   "#fff3b0", "#fde047", "#fb923c", "#ef4444", // 30-33 flame hot -> cool
   "#ffffff", "#e2e8f0", "#94a3b8", "#475569", // 34-37 trail new -> old
-  "#facc15", "#f97316", "#cfe3f5", "#94a3b8", "#ffffff", // 38-42 Temoc: hair y, hair/shirt o, skin, outline, eyes/logo
+  "#facc15", "#f97316", "#d6e7f7", "#93b4d9", "#334155", "#ffffff", // 38-43 Temoc: y o s S k w
+  "#14532d", "#166534", "#15803d", "#22c55e", "#4ade80", // 44-48 rocket lower body (green)
+  "#7c2d12", // 49 letter backing (unused colour; backing cells are blank)
+  "#e0f2fe", "#7dd3fc", "#38bdf8", "#0284c7", // 50-53 comet head -> tail
 ]; // prettier-ignore
-const C_RIM = 4, C_STAR = 5, C_OCEAN = 8, C_LAND = 13, C_ICE = 17, C_ATMO = 19, C_BODY = 20, C_NOSE = 25, C_FLAME = 30, C_TRAIL = 34; // prettier-ignore
-const TEMOC_COL: Record<string, number> = { y: 38, o: 39, s: 40, k: 41, w: 42 };
+const C_RIM = 4, C_STAR = 5, C_OCEAN = 8, C_LAND = 13, C_ICE = 17, C_ATMO = 19, C_WHITE = 20, C_FIN = 25, C_FLAME = 30, C_TRAIL = 34, C_GREEN = 44, C_LETTER_BG = 49, C_COMET = 50; // prettier-ignore
+const TEMOC_COL: Record<string, number> = { y: 38, o: 39, s: 40, S: 41, k: 42, w: 43 };
 
-// Temoc riding: bottom row sits on the rocket. Chars + one colour key per char.
-const RIDER = [
-  ["  ) ( ) (  ", "  y o y o  "],
-  [" (%#*%#*%) ", " yoyoyoyoy "],
-  [" (#%#*#%#) ", " oyoyoyoyo "],
-  ["  |o   o|  ", "  kw   wk  "],
-  ["  | \\_/ |  ", "  k kkk k  "],
-  ["   \\___/   ", "   kkkkk   "],
-  [" _/[UTD]\\_ ", " ssowwwoss "],
-  ["/  |___|  \\", "s  ooooo  s"],
-  ["  _/   \\_  ", "  ss   ss  "],
-];
+// 5x7 block font for the ring lettering; each "#" is drawn as a 2x1-cell block (square on screen).
+const FONT: Record<string, string[]> = {
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  C: [".####", "#....", "#....", "#....", "#....", "#....", ".####"],
+  D: ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+  E: ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
+  I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+  K: ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
+  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  R: ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  U: ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  Y: ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."],
+  "·": [".....", ".....", ".....", "..#..", ".....", ".....", "....."],
+};
 
 const TOP_TEXT = "COMET ROCKETRY";
 const BOTTOM_TEXT = "AIAA · UTD";
+const HAIR_ROWS = 0.45; // top fraction of the rider whose flame hair flickers
 
 function rng(seed: number) {
   return () => {
@@ -83,10 +93,11 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
   const stars = useMemo(() => {
     const r = rng(11);
     const out: { x: number; y: number; ph: number; sp: number }[] = [];
-    while (out.length < 110) {
-      const x = (r() * 2 - 1) * R_IN;
-      const y = (r() * 2 - 1) * R_IN;
-      if (Math.hypot(x, y) > R_IN - 2 || Math.hypot(x - GLOBE.x, y - GLOBE.y) < GLOBE.r + 2) continue;
+    while (out.length < 170) {
+      const x = (r() * 2 - 1) * (COLS / 4);
+      const y = (r() * 2 - 1) * (ROWS / 2);
+      const d = Math.hypot(x, y);
+      if ((d > R_IN - 2 && d < R_OUT + 1.5) || Math.hypot(x - GLOBE.x, y - GLOBE.y) < GLOBE.r + 2) continue;
       out.push({ x, y, ph: r() * 6.28, sp: 0.8 + r() * 2.5 });
     }
     return out;
@@ -101,7 +112,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
 
     let cellW = 4;
     const resize = () => {
-      const w = Math.min(box.clientWidth, 760);
+      const w = Math.min(box.clientWidth, 980);
       cellW = w / COLS;
       const dpr = window.devicePixelRatio || 1;
       cv.style.width = `${w}px`;
@@ -111,7 +122,11 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const ro = new ResizeObserver(resize);
+    let redrawStill: (() => void) | null = null; // a resized canvas is cleared, so still frames must redraw
+    const ro = new ResizeObserver(() => {
+      resize();
+      redrawStill?.();
+    });
     ro.observe(box);
 
     const topRow = new Int16Array(COLS);
@@ -122,7 +137,8 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
     const kRocket = ROCKET_LEN / rocket.length_m;
     const mid = rocket.length_m / 2;
 
-    const put = (X: number, Y: number, ch: string, color: number, z: number) => {
+    const spriteZ = new Float32Array(COLS * ROWS); // rocket / flame / Temoc cells, for their outline
+    const put = (X: number, Y: number, ch: string, color: number, z: number, sprite = false) => {
       const c = Math.floor(CX + X * 2);
       const r = Math.floor(CY - Y);
       if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
@@ -131,6 +147,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
       grid.z[i] = z;
       grid.ch[i] = ch;
       grid.col[i] = color;
+      spriteZ[i] = sprite ? z : -1e9;
     };
     const cellCentre = (i: number) => [(i % COLS) + 0.5 - CX, CY - (Math.floor(i / COLS) + 0.5)] as const;
 
@@ -145,6 +162,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
     const draw = (t: number) => {
       grid.ch.fill(" ");
       grid.z.fill(-1e9);
+      spriteZ.fill(-1e9);
 
       // ---- ring, rims, sky stars ----
       for (let i = 0; i < COLS * ROWS; i++) {
@@ -163,9 +181,53 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
           grid.z[i] = -100;
         }
       }
+      const rm = (R_IN + R_OUT) / 2;
+      const blockLetter = (chr: string, ang: number) => {
+        const glyph = FONT[chr];
+        if (!glyph) return;
+        const x0 = Math.cos(ang) * rm;
+        const y0 = Math.sin(ang) * rm;
+        const gh = glyph.length;
+        for (let gr = -1; gr <= gh; gr++) {
+          for (let gc = -1; gc <= 5; gc++) {
+            const lit = (r: number, c: number) => r >= 0 && r < gh && c >= 0 && c < 5 && glyph[r][c] === "#";
+            const on = lit(gr, gc);
+            // a one-pixel dark gap around the strokes keeps them readable without punching a box in the ring
+            const near = !on && [-1, 0, 1].some((dr) => [-1, 0, 1].some((dc) => lit(gr + dr, gc + dc)));
+            if (!on && !near) continue;
+            for (const half of [0, 0.5]) {
+              const X = x0 + (gc - 2) + half;
+              const Y = y0 - (gr - (gh - 1) / 2);
+              put(X, Y, on ? "#" : " ", on ? C_RIM : C_LETTER_BG, on ? -98 : -99); // blank backing = a clean notch of sky
+            }
+          }
+        }
+      };
+      const topStep = (205 / TOP_TEXT.length) * (Math.PI / 180);
+      [...TOP_TEXT].forEach((chr, i) => blockLetter(chr, Math.PI / 2 + ((TOP_TEXT.length - 1) / 2 - i) * topStep));
+      const botStep = 11.5 * (Math.PI / 180);
+      [...BOTTOM_TEXT].forEach((chr, i) => blockLetter(chr, (3 * Math.PI) / 2 + (i - (BOTTOM_TEXT.length - 1) / 2) * botStep));
+
+      // comets: one crosses the top-left corner, later one crosses the bottom-right (behind the ring)
+      const comet = (phase: number, x0: number, y0: number, x1: number, y1: number) => {
+        const u = ((t + phase) % 16) / 4; // 4 s crossing every 16 s
+        if (u > 1) return;
+        const hx = x0 + (x1 - x0) * u;
+        const hy = y0 + (y1 - y0) * u;
+        const dl = Math.hypot(x1 - x0, y1 - y0);
+        const dx = (x0 - x1) / dl, dy = (y0 - y1) / dl; // prettier-ignore
+        for (let d = 0; d < 9; d += 0.35) {
+          const level = d < 0.6 ? 0 : d < 2.5 ? 1 : d < 5 ? 2 : 3;
+          const spread = d * 0.12;
+          for (let v = -spread; v <= spread; v += 0.5) put(hx + dx * d - dy * v, hy + dy * d + dx * v, "@*=:."[Math.min(4, level + (v ? 1 : 0))], C_COMET + level, -110 - d);
+        }
+      };
+      comet(0, -47, 22, -22, 44);
+      comet(8, 47, -22, 22, -44);
+
       for (const s of stars) {
         const tw = Math.sin(t * s.sp + s.ph);
-        put(s.x, s.y, tw > 0.8 ? "*" : tw > 0.2 ? "+" : ".", tw > 0.8 ? C_STAR + 2 : tw > 0.2 ? C_STAR + 1 : C_STAR, -90);
+        put(s.x, s.y, tw > 0.8 ? "*" : tw > 0.2 ? "+" : ".", tw > 0.8 ? C_STAR + 2 : tw > 0.2 ? C_STAR + 1 : C_STAR, -120);
       }
 
       // ---- globe ----
@@ -224,12 +286,12 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
         let dot = (na * Tx + nu * Nx) * LX + (na * Ty + nu * Ny) * LY + nw * LZ;
         if (p.twoSided && dot < 0) dot = -dot * 0.6;
         const b = Math.min(0.999, Math.max(0, 0.1 + 0.85 * dot));
-        const base = p.part === 1 ? C_BODY : C_NOSE;
+        const base = p.part === 2 ? C_FIN : p.x > mid ? C_GREEN : C_WHITE; // white top half, green bottom half, orange fins
         const X = P.x + a * Tx + u * Nx;
         const Y = P.y + a * Ty + u * Ny;
         const col = Math.floor(CX + X * 2);
         if (col >= 0 && col < COLS) topRow[col] = Math.min(topRow[col], Math.floor(CY - Y)); // for seating Temoc
-        put(X, Y, SHADE[1 + Math.floor(b * (SHADE.length - 1))], base + Math.min(4, Math.floor(b * 5)), P.z + w);
+        put(X, Y, SHADE[1 + Math.floor(b * (SHADE.length - 1))], base + Math.min(4, Math.floor(b * 5)), P.z + w, true);
       }
 
       // ---- flame out of the tail ----
@@ -244,7 +306,7 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
           const heat = 1 - kk - 0.35 * Math.abs(u / w) + 0.25 * (flick() - 0.5);
           if (heat < 0.05) continue;
           const level = heat > 0.7 ? 0 : heat > 0.45 ? 1 : heat > 0.22 ? 2 : 3;
-          put(tailX - d * Tx + u * Nx, tailY - d * Ty + u * Ny, "@#*:"[level], C_FLAME + level, P.z + 0.5);
+          put(tailX - d * Tx + u * Nx, tailY - d * Ty + u * Ny, "@#*:"[level], C_FLAME + level, P.z + 0.5, true);
         }
       }
 
@@ -267,34 +329,45 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
       }
 
       // ---- Temoc riding (sits on the top side of the rocket, just behind the middle) ----
-      // seat = the topmost rocket cell in the column just behind the middle, so he sits on it at any angle
-      const seatX = P.x - ROCKET_LEN * 0.12 * persp * Tx;
+      // seat = the topmost rocket cell in the column under his middle, so he sits on it at any angle
+      const seatX = P.x - ROCKET_LEN * 0.22 * persp * Tx; // behind the middle, so the nose half shows
       const seatCol = Math.floor(CX + seatX * 2);
       const top = seatCol >= 0 && seatCol < COLS ? topRow[seatCol] : 9999;
       const seatY = top < 9999 ? CY - top - 0.5 : P.y + radius;
-      const half = Math.floor(RIDER[0][0].length / 2);
-      RIDER.forEach(([line, keys], i) => {
-        const rowY = seatY + (RIDER.length - i) - 0.5;
+      const rider = TEMOC_RIDER;
+      const half = Math.max(...rider.chars.map((l) => l.length)) / 2;
+      const hairRows = Math.round(rider.chars.length * HAIR_ROWS);
+      rider.chars.forEach((line, i) => {
+        const keys = rider.keys[i];
+        const rowY = seatY + (rider.chars.length - i) - 1.5; // bottom row overlaps the rocket: he's sitting in it
         for (let j = 0; j < line.length; j++) {
           let ch = line[j];
-          if (ch === " ") continue;
-          if (i < 3 && flick() < 0.2) ch = "*#%()"[Math.floor(flick() * 5)]; // flame hair
-          put(seatX + (j - half) / 2, rowY, ch, TEMOC_COL[keys[j]] ?? C_RIM, P.z + radius + 1);
+          const key = keys[j];
+          if (ch === " " || !key || key === " ") continue;
+          if (i < hairRows && (key === "y" || key === "o") && flick() < 0.18) ch = "#%@*"[Math.floor(flick() * 4)];
+          put(seatX + (j - half) / 2, rowY, ch, TEMOC_COL[key] ?? C_RIM, P.z + radius + 1, true);
         }
       });
+
+      // ---- one-cell dark outline around rocket, flame and Temoc so they read against the globe ----
+      for (let i = 0; i < COLS * ROWS; i++) {
+        const z = spriteZ[i];
+        if (z <= -1e8) continue;
+        const c = i % COLS;
+        for (const j of [i - 1, i + 1, i - COLS, i + COLS]) {
+          if (j < 0 || j >= COLS * ROWS || (j === i - 1 && c === 0) || (j === i + 1 && c === COLS - 1)) continue;
+          if (spriteZ[j] > -1e8 || grid.z[j] >= z) continue;
+          grid.ch[j] = " ";
+          grid.z[j] = z - 0.01;
+        }
+      }
 
       // ---- paint ----
       const cw = cellW;
       const chH = cw * 2;
       ctx.clearRect(0, 0, cw * COLS, chH * ROWS);
-      ctx.fillStyle = "#03050b";
-      ctx.beginPath();
-      ctx.arc(CX * cw, CY * chH, (R_OUT + 1.5) * chH, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#0b1238";
-      ctx.beginPath();
-      ctx.arc(CX * cw, CY * chH, (R_IN - 0.9) * chH, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = SKY;
+      ctx.fillRect(0, 0, cw * COLS, chH * ROWS);
       ctx.font = `700 ${chH * 0.9}px ui-monospace, Menlo, Consolas, monospace`;
       ctx.textBaseline = "top";
       ctx.textAlign = "left";
@@ -306,30 +379,14 @@ export function LogoScene({ rocket }: { rocket: RocketModel }) {
         for (const i of cells) ctx.fillText(grid.ch[i], (i % COLS) * cw, Math.floor(i / COLS) * chH);
       });
 
-      // ---- lettering on the ring (stroked so it reads over the ring texture) ----
-      const rm = (R_IN + R_OUT) / 2;
-      const letter = (chr: string, ang: number) => {
-        const x = CX * cw + Math.cos(ang) * rm * chH;
-        const y = CY * chH - Math.sin(ang) * rm * chH;
-        ctx.strokeText(chr, x, y);
-        ctx.fillText(chr, x, y);
-      };
-      ctx.font = `800 ${chH * 3.6}px Inter, system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = chH * 1.1;
-      ctx.strokeStyle = "#c2410c";
-      ctx.fillStyle = PAL[C_RIM];
-      const topStep = (205 / TOP_TEXT.length) * (Math.PI / 180);
-      [...TOP_TEXT].forEach((chr, i) => letter(chr, Math.PI / 2 + ((TOP_TEXT.length - 1) / 2 - i) * topStep));
-      const botStep = 11 * (Math.PI / 180);
-      [...BOTTOM_TEXT].forEach((chr, i) => letter(chr, (3 * Math.PI) / 2 + (i - (BOTTOM_TEXT.length - 1) / 2) * botStep));
     };
 
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // ?scene_t=12.3 freezes the scene at that time (handy for screenshots and tuning)
+    const fixed = Number.parseFloat(new URLSearchParams(window.location.search).get("scene_t") ?? "");
+    const still = Number.isFinite(fixed) || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (still) {
-      draw(1.2);
+      redrawStill = () => draw(Number.isFinite(fixed) ? fixed : 1.2);
+      redrawStill();
       return () => ro.disconnect();
     }
     let raf = 0;
