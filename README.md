@@ -73,8 +73,10 @@ backend/.venv/bin/python -m ground_station.tools.ascii_rocket          # Ctrl+C 
 backend/.venv/bin/python -m ground_station.tools.ascii_rocket --once   # single frame
 ```
 
-In the dashboard, Configuration → About shows the rocket climbing at 45° with a flame, drifting
-stars and an ASCII Temoc. It is decorative only and never appears on the flight-data screens.
+In the dashboard, Configuration → About shows the Comet Rocketry logo as a live ASCII scene: the
+globe spins while our rocket (shape from the `.ork`) orbits it with a flame and a fading trail,
+Temoc riding on top. It is decorative only, runs only while that page is open, and never appears
+on the flight-data screens. The globe uses a coarse hand-drawn land map (`frontend/src/v3/worldMap.ts`).
 `scripts/run-pi.sh` plays the terminal version for 4 s at startup (skip with `GS_NO_SPLASH=1`).
 
 Temoc and the Comet Rocketry logo are pre-converted to colour ASCII by
