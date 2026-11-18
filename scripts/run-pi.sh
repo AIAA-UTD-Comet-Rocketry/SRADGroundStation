@@ -4,6 +4,7 @@
 #   scripts/run-pi.sh            # backend only, open http://localhost:8000 yourself
 #   scripts/run-pi.sh --kiosk    # also open Chromium fullscreen on the Pi's monitor
 #   scripts/run-pi.sh --host 0.0.0.0   # let laptops on the same network open http://<pi>:8000
+#   GS_NO_SPLASH=1 scripts/run-pi.sh   # skip the 4 s ASCII rocket splash
 #
 # First run creates backend/.venv and installs Python deps (needs internet once).
 # The UI must already be built into frontend/dist (build on a laptop and copy it,
@@ -51,6 +52,12 @@ if [[ "$KIOSK" == 1 ]]; then
       echo "[warn] Chromium not found; open http://127.0.0.1:8000 manually."
     fi
   ) &
+fi
+
+# A few seconds of ASCII rocket when started from a terminal (just for fun; never blocks startup).
+# Skip it with GS_NO_SPLASH=1.
+if [[ -t 1 && -z "${GS_NO_SPLASH:-}" ]]; then
+  backend/.venv/bin/python -m ground_station.tools.ascii_rocket --seconds 4 || true
 fi
 
 exec backend/.venv/bin/python -m ground_station "$@"

@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 from ..ascii_rocket import PART_BODY, PART_FIN, PART_NOSE, RADIAL_SCALE, SHADE, build_points, projector, render
+from ..ascii_art import COMET_LOGO_CHARS, COMET_LOGO_KEYS, TEMOC_CHARS, TEMOC_KEYS
 from ..config import load_config
 from ..rocket_model import load_rocket
 from ..server import REPO_ROOT
@@ -31,7 +32,9 @@ TILT = math.pi / 4  # 45°, climbing to the upper right
 TAIL_FRAC = 0.42  # flame room behind the tail, as a fraction of rocket length
 
 # Extra cell kinds beyond the renderer's PART_* (0..2)
-FLAME_HOT, FLAME_MID, FLAME_COOL, STAR, M_FLAME, M_BODY, TEXT = range(3, 10)
+FLAME_HOT, FLAME_MID, FLAME_COOL, STAR, TEXT = range(3, 8)
+TEMOC_KIND = {"k": 8, "y": 9, "o": 10, "s": 11, "S": 12, "w": 13}
+LOGO_KIND = {"o": 14, "b": 15, "g": 16, "y": 17, "w": 18}
 
 # 256-colour codes. Rocket parts are indexed by shade level (dark -> bright).
 PALETTE = {
@@ -39,27 +42,13 @@ PALETTE = {
     PART_BODY: [238, 240, 242, 245, 248, 250, 252, 254, 255],
     PART_FIN: [130, 166, 166, 202, 202, 208, 208, 214, 214],
 }
-FIXED = {FLAME_HOT: 227, FLAME_MID: 214, FLAME_COOL: 196, STAR: 245, M_FLAME: 208, M_BODY: 39, TEXT: 252}
-
-# Temoc (UT Dallas' mascot), hand-drawn fan sketch; same art as the dashboard.
-TEMOC = [
-    "    ( )  ( )   ",
-    "   ) ( )( ) (  ",
-    "  ( ) ( )( ) ) ",
-    "   \\_________/ ",
-    "   |  \\   /  | ",
-    "   |  (o) (o)| ",
-    "   |    ^    | ",
-    "    \\  \\_/  /  ",
-    "     '-----'   ",
-    "   ___|   |___ ",
-    "  /  | UTD |  \\",
-    " /_/ |_____| \\_\\",
-    "     |  |  |   ",
-    "     |__|__|   ",
-]
-TEMOC_FLAME_ROWS = 3
-FLAME_CHARS = "()^'`"
+FIXED = {
+    FLAME_HOT: 227, FLAME_MID: 214, FLAME_COOL: 196, STAR: 245, TEXT: 252,
+    8: 61, 9: 220, 10: 208, 11: 153, 12: 110, 13: 231,  # Temoc: outline, hair, shirt, skin, shade, logo
+    14: 208, 15: 33, 16: 71, 17: 220, 18: 252,  # logo: ring, ocean, land, rocket, trail
+}  # fmt: skip
+HAIR_ROWS = 0.4  # top fraction of Temoc whose flame hair flickers
+HAIR_CHARS = "*#%"
 
 
 class Scene:
@@ -84,25 +73,30 @@ class Scene:
                 chars[r][c] = ch
                 parts[r][c] = kind
 
-        # Title block, top-left (the 45° rocket leaves that corner empty)
-        text_rows = len(self.info) + 1
-        text_cols = 3 + max((len(x) for x in self.info), default=0)
-        for i, text in enumerate(self.info):
+        # Logo + title block, top-left (the 45° rocket leaves that corner empty)
+        logo = rows >= len(COMET_LOGO_CHARS) + len(self.info) + 22
+        block = (COMET_LOGO_CHARS + [""] if logo else []) + self.info
+        block_keys = (COMET_LOGO_KEYS + [""] if logo else []) + [""] * len(self.info)
+        text_rows = len(block) + 1
+        text_cols = 3 + max((len(x) for x in block), default=0)
+        for i, (text, keys) in enumerate(zip(block, block_keys)):
             for j, ch in enumerate(text[: cols // 2]):
                 if ch != " ":
-                    put(2 + j, 1 + i, ch, TEXT)
+                    k = keys[j] if j < len(keys) else " "
+                    put(2 + j, 1 + i, ch, LOGO_KIND.get(k, TEXT))
 
-        # Temoc, bottom-right
-        m_top = rows - len(TEMOC)
-        m_left = cols - max(len(x) for x in TEMOC) - 1
-        for i, line in enumerate(TEMOC):
+        # Temoc, bottom-right; his flame hair flickers
+        m_top = rows - len(TEMOC_CHARS)
+        m_left = cols - max(len(x) for x in TEMOC_CHARS) - 1
+        hair_rows = round(len(TEMOC_CHARS) * HAIR_ROWS)
+        for i, (line, keys) in enumerate(zip(TEMOC_CHARS, TEMOC_KEYS)):
             for j, ch in enumerate(line):
-                if ch == " ":
+                k = keys[j] if j < len(keys) else " "
+                if ch == " " or k == " ":
                     continue
-                flame = i < TEMOC_FLAME_ROWS
-                if flame and rnd.random() < 0.25:
-                    ch = rnd.choice(FLAME_CHARS)
-                put(m_left + j, m_top + i, ch, M_FLAME if flame else M_BODY)
+                if i < hair_rows and k in "yo" and rnd.random() < 0.2:
+                    ch = rnd.choice(HAIR_CHARS)
+                put(m_left + j, m_top + i, ch, TEMOC_KIND[k])
 
         # Exhaust plume: bulges just past the nozzle, tapers and cools with distance
         scale, cell = projector(self.points, self.length, cols, rows, TILT, tail)

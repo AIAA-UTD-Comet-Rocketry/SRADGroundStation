@@ -366,7 +366,9 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 /* ---------------- ASCII art (Configuration -> About) ---------------- */
 .about-card { grid-column: 1 / -1; }
 .about-body { display: flex; flex-direction: column; gap: 14px; align-items: center; }
-.about-text { display: flex; flex-direction: column; gap: 6px; text-align: center; max-width: 640px; }
+.about-row { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.about-text { display: flex; flex-direction: column; gap: 6px; max-width: 460px; }
+.ar-logo { font-size: 8px; line-height: 8px; }
 .ascii-rocket { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--muted); user-select: none; white-space: pre; overflow: hidden; max-width: 100%; }
 .ar-about { font-size: 7px; line-height: 7px; padding: 10px 12px; border-radius: 12px; background: var(--ar-sky); }
 .ascii-rocket .ar-nose { color: var(--accent); }
@@ -376,7 +378,16 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 .ascii-rocket .ar-f2 { color: var(--ar-f2); }
 .ascii-rocket .ar-f3 { color: var(--ar-f3); }
 .ascii-rocket .ar-star { color: var(--dim); }
-.ascii-rocket .ar-m-flame { color: #ff7a1a; }
-.ascii-rocket .ar-m-body { color: var(--c-alt); }
-:root { --ar-sky: transparent; --ar-f1: #d97706; --ar-f2: #ea580c; --ar-f3: #b91c1c; }
-:root[data-theme="dark"] { --ar-sky: rgba(0, 0, 0, .25); --ar-f1: #ffe066; --ar-f2: #ff9f1c; --ar-f3: #e4572e; }
+.ascii-rocket .ar-t-k { color: var(--ar-t-k); }
+.ascii-rocket .ar-t-y { color: var(--ar-f1); }
+.ascii-rocket .ar-t-o { color: #f97316; }
+.ascii-rocket .ar-t-s { color: var(--ar-t-s); }
+.ascii-rocket .ar-t-S { color: var(--ar-t-S); }
+.ascii-rocket .ar-t-w { color: var(--text); font-weight: 700; }
+.ascii-rocket .ar-l-o { color: #f97316; }
+.ascii-rocket .ar-l-b { color: #3b8fe0; }
+.ascii-rocket .ar-l-g { color: #4caf50; }
+.ascii-rocket .ar-l-y { color: var(--ar-f1); }
+.ascii-rocket .ar-l-w { color: var(--ar-t-S); }
+:root { --ar-sky: transparent; --ar-f1: #d97706; --ar-f2: #ea580c; --ar-f3: #b91c1c; --ar-t-k: #1e2a4f; --ar-t-s: #7ea6cf; --ar-t-S: #5b7fa8; }
+:root[data-theme="dark"] { --ar-sky: rgba(0, 0, 0, .25); --ar-f1: #ffe066; --ar-f2: #ff9f1c; --ar-f3: #e4572e; --ar-t-k: #5d77b8; --ar-t-s: #d6e7f7; --ar-t-S: #93b4d9; }

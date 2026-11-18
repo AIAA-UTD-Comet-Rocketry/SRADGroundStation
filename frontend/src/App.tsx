@@ -12,7 +12,8 @@ import { MissionTimeline, SystemHealth, healthRows } from "./v3/panels";
 import { Icon } from "./v3/icons";
 import { Controls, EventLog, GpsPanel, ImuPanel, LinkPanel, RecordingPanel, VideoPane } from "./components/Panels";
 import { RocketProfile } from "./components/RocketProfile";
-import { AsciiRocket } from "./v3/AsciiRocket";
+import { AsciiArtBlock, AsciiRocket } from "./v3/AsciiRocket";
+import { COMET_LOGO } from "./v3/asciiArt";
 
 export default function App() {
   const t = useTelemetry();
@@ -318,13 +319,16 @@ function Settings({
         <Card title="About" icon={Icon.rocket()} className="about-card">
           <div className="about-body">
             <AsciiRocket rocket={rocket} cols={120} rows={46} className="ar-about" />
-            <div className="about-text">
-              <b>UTD Comet Rocketry · SRAD Ground Station</b>
-              <span className="dim">{rocket.name}</span>
-              <span className="dim small">
-                Rocket shape from {rocket.source_file} (radius widened so it reads at character size), Temoc watching from the corner. ASCII
-                rendering idea from alishsharma17/Ascii-Flower-Bouquet-.
-              </span>
+            <div className="about-row">
+              <AsciiArtBlock art={COMET_LOGO} prefix="ar-l-" className="ar-logo" label="Comet Rocketry logo, ASCII art" />
+              <div className="about-text">
+                <b>UTD Comet Rocketry · SRAD Ground Station</b>
+                <span className="dim">{rocket.name}</span>
+                <span className="dim small">
+                  Rocket shape from {rocket.source_file} (radius widened so it reads at character size); Temoc and the logo converted from images
+                  with scripts/make_ascii_art.py. ASCII rendering idea from alishsharma17/Ascii-Flower-Bouquet-.
+                </span>
+              </div>
             </div>
           </div>
         </Card>

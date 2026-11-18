@@ -35,7 +35,17 @@ def test_terminal_scene_renders_title_rocket_and_temoc():
     text = re.sub(r"\x1b\[[0-9;]*[mK]", "", scene.frame(1.0, 120, 40))
     lines = text.split("\n")
     assert len(lines) == 40
-    assert lines[1].strip().startswith("UTD Comet Rocketry")
-    assert "4.06 m  ·  155 mm" in lines[2]  # stars never land inside the title block
-    assert "UTD |" in text  # Temoc's jersey
+    title = next(i for i, line in enumerate(lines) if line.strip().startswith("UTD Comet Rocketry"))
+    assert "4.06 m  ·  155 mm" in lines[title + 1]  # stars never land inside the title block
+    assert "UTD" in text  # Temoc's shirt
     assert "@" in text  # rocket / flame drawn
+
+
+def test_generated_art_is_well_formed():
+    from ground_station.ascii_art import COMET_LOGO_CHARS, COMET_LOGO_KEYS, TEMOC_CHARS, TEMOC_KEYS
+
+    for chars, keys, allowed in ((TEMOC_CHARS, TEMOC_KEYS, set("kyosSw ")), (COMET_LOGO_CHARS, COMET_LOGO_KEYS, set("obgyw "))):
+        assert len(chars) == len(keys)
+        for c, k in zip(chars, keys):
+            assert len(k) <= len(c)
+            assert set(k) <= allowed
