@@ -1,7 +1,8 @@
 # Architecture
 
-Status: **M1 (software-only)**. Simulation, logging, replay, and the HUD work. Real LoRa
-decoding is not implemented and video is live-view only — see [hardware-inventory.md](hardware-inventory.md).
+Simulation, logging, replay, the HUD and LIVE decoding of `fc_uart_v1` work; the real radio
+hasn't been tested end to end yet and video is live-view only. See [roadmap.md](roadmap.md) and
+[hardware-inventory.md](hardware-inventory.md). Plain-English version: [guide/how-it-works.md](guide/how-it-works.md).
 
 ```
                    ┌──────────────────────────── backend (Python) ───────────────────────────┐
@@ -41,8 +42,8 @@ ReplaySource ─────┘│   (FlightData + RSSI/SNR)     link stats,    
 ## Adding the real radio
 
 1. Define the flight packet (binary layout, CRC, rate) with avionics → `docs/telemetry-schema.md`.
-2. Write `decode_<name>(line_or_frame: bytes) -> SourcePacket` in `sources/serial_lora.py`,
-   raising `PacketError` on any failure, and add it to `DECODERS`.
+2. Write a `StreamDecoder` subclass in `sources/decoders.py` whose `feed(bytes)` returns
+   `SourcePacket`s / `RejectedPacket`s, and add it to `DECODERS`.
 3. If the receiver isn't line-oriented (e.g. length-prefixed binary, or SPI on the Pi's GPIO),
    add a new `TelemetrySource` subclass instead. The hub and UI don't change.
 4. Add fixture packets under `backend/tests/` and a decoder test.
