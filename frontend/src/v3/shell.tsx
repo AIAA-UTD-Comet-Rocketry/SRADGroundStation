@@ -5,6 +5,7 @@ import type { RocketModel } from "../rocket";
 import type { Theme, Units } from "../prefs";
 import { fmt } from "../format";
 import { Icon, SignalBars } from "./icons";
+import { SidebarRocket } from "./SidebarRocket";
 
 export type View = "dashboard" | "telemetry" | "map" | "video" | "systems" | "mission" | "logs" | "settings";
 
@@ -27,7 +28,9 @@ export function Sidebar({
   socket,
   collapsed,
   onToggle,
+  rocket,
 }: {
+  rocket: RocketModel | null;
   view: View;
   onView: (v: View) => void;
   socket: SocketState;
@@ -71,6 +74,7 @@ export function Sidebar({
           </li>
         ))}
       </ul>
+      {rocket ? <SidebarRocket rocket={rocket} collapsed={collapsed} /> : <div className="side-art" />}
       <div className="side-foot">
         <div className={`side-status ${online ? "ok" : "bad"}`} title={collapsed ? statusText : undefined}>
           <span className="dot" /> <span className="side-status-text">{statusText}</span>

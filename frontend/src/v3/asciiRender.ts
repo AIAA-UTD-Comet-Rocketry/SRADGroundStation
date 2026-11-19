@@ -37,7 +37,7 @@ function inside(x: number, y: number, poly: [number, number][]) {
   return hit;
 }
 
-export function buildPoints(rocket: RocketModel, axialSamples = 260, ringSamples = 28): Pt[] {
+export function buildPoints(rocket: RocketModel, axialSamples = 260, ringSamples = 28, radialScale = RADIAL_SCALE): Pt[] {
   const { outline, length_m: length } = rocket;
   const noseLen = rocket.sections[0]?.kind === "nosecone" ? rocket.sections[0].length : 0;
   const step = length / axialSamples;
@@ -47,14 +47,14 @@ export function buildPoints(rocket: RocketModel, axialSamples = 260, ringSamples
     const [x0, ra] = outline[s];
     const [x1, rb] = outline[s + 1];
     if (x1 - x0 < 1e-9) continue;
-    const r0 = ra * RADIAL_SCALE;
-    const slope = (rb * RADIAL_SCALE - r0) / (x1 - x0);
+    const r0 = ra * radialScale;
+    const slope = (rb * radialScale - r0) / (x1 - x0);
     const nAx = Math.max(1, Math.round((x1 - x0) / step));
     const inv = 1 / Math.sqrt(1 + slope * slope);
     for (let i = 0; i < nAx; i++) {
       const x = x0 + ((x1 - x0) * (i + 0.5)) / nAx;
       const r = r0 + slope * (x - x0);
-      const k = Math.max(6, Math.round((ringSamples * r) / (0.08 * RADIAL_SCALE)));
+      const k = Math.max(6, Math.round((ringSamples * r) / (0.08 * radialScale)));
       const part = x <= noseLen + 1e-6 ? PART_NOSE : PART_BODY;
       for (let j = 0; j < k; j++) {
         const a = (2 * Math.PI * (j + 0.5 * (i % 2))) / k;
@@ -80,7 +80,7 @@ export function buildPoints(rocket: RocketModel, axialSamples = 260, ringSamples
       for (let x = Math.min(...xs); x <= Math.max(...xs); x += step) {
         for (let y = bodyR; y <= Math.max(...ys); y += gy) {
           if (!inside(x, y, poly)) continue;
-          const rr = bodyR * RADIAL_SCALE + (y - bodyR) * 1.4;
+          const rr = bodyR * radialScale + (y - bodyR) * 1.4 * (radialScale / RADIAL_SCALE);
           pts.push({ x, y: rr * c, z: rr * sn, nx: 0, ny: -sn, nz: c, part: PART_FIN, twoSided: true });
         }
       }
