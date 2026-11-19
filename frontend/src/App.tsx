@@ -173,6 +173,7 @@ export default function App() {
         onView={setView}
         socket={t.socket}
         collapsed={sidebar === "collapsed"}
+        rocket={rocket}
         onToggle={() => setSidebar(sidebar === "collapsed" ? "expanded" : "collapsed")}
       />
       <div className="main">

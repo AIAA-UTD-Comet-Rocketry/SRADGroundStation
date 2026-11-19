@@ -130,6 +130,8 @@ button { font: inherit; }
 .side.collapsed .side-toggle, .side.collapsed .side-item { justify-content: center; padding-left: 0; padding-right: 0; }
 .side.collapsed .side-foot { padding: 14px 0 0; }
 .side.collapsed .side-status { justify-content: center; }
+.side-art { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.side-art canvas { display: block; }
 
 /* ---------------- top bar ---------------- */
 .top { display: flex; align-items: center; gap: 16px; padding: 14px 16px 12px; border-bottom: 1px solid var(--border); background: var(--bg-2); }
@@ -312,7 +314,7 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 .view-mission { grid-template-columns: 1fr 1fr 1fr; align-items: start; }
 .view-mission .wide { grid-column: 1 / -1; }
 .view-logs { grid-template-columns: 1.2fr 1fr 1fr; align-items: start; }
-.view-settings { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1100px; }
+.view-settings { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1100px; width: 100%; margin-inline: auto; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-weight: 600; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .seg button { border: 0; background: transparent; color: var(--text); padding: 8px 14px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-weight: 700; font-size: 13px; }
@@ -386,6 +388,7 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
   .side-item span { display: none; }
   .side-foot { display: none; }
   .side-toggle { display: none; }
+  .side-art { display: none; }
   .shell.side-collapsed { grid-template-columns: 1fr; }
   .kpis { grid-template-columns: 1fr 1fr; }
   .dash-row1, .dash-row2, .view, .view-telemetry, .view-map, .view-video, .view-systems, .view-mission, .view-logs, .view-settings { grid-template-columns: 1fr; }
