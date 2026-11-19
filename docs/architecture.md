@@ -1,7 +1,7 @@
 # Architecture
 
 Status: **M1 (software-only)**. Simulation, logging, replay, and the HUD work. Real LoRa
-decoding and video are not implemented — see [hardware-inventory.md](hardware-inventory.md).
+decoding is not implemented and video is live-view only — see [hardware-inventory.md](hardware-inventory.md).
 
 ```
                    ┌──────────────────────────── backend (Python) ───────────────────────────┐
@@ -47,7 +47,15 @@ ReplaySource ─────┘│   (FlightData + RSSI/SNR)     link stats,    
    add a new `TelemetrySource` subclass instead. The hub and UI don't change.
 4. Add fixture packets under `backend/tests/` and a decoder test.
 
-## Video (not started)
+## Video (live view only)
 
-Planned as a separate path from telemetry: VRX → capture device → Pi. Until the hardware is
-known the HUD shows "NO VIDEO SOURCE". See the handoff's M4 bench-test plan.
+A separate path from telemetry: VTX → VRX → capture device → Pi (IREC student video band,
+1240–1300 MHz; the frequency is set on the VTX/VRX, not in this software). The VTX, VRX and
+capture hardware are still TBD; see the handoff's M4 bench-test plan.
+
+The dashboard's **Video** page (`frontend/src/v3/VideoView.tsx`) shows any capture device the
+browser sees as a camera (a USB UVC capture device does), picked from a list and remembered per
+browser. It runs entirely in the browser: the backend never touches video and nothing is
+recorded. Browsers only allow capture on a secure page, so open it at `http://localhost:8000` on
+the machine the capture device is plugged into. Until a device is connected it shows "NO VIDEO
+SOURCE".

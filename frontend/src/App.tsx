@@ -13,6 +13,7 @@ import { Icon } from "./v3/icons";
 import { Controls, EventLog, GpsPanel, ImuPanel, LinkPanel, RecordingPanel, VideoPane } from "./components/Panels";
 import { RocketProfile } from "./components/RocketProfile";
 import { LogoScene } from "./v3/LogoScene";
+import { VideoView } from "./v3/VideoView";
 
 export default function App() {
   const t = useTelemetry();
@@ -103,6 +104,9 @@ export default function App() {
           </div>
         </div>
       );
+      break;
+    case "video":
+      body = <VideoView />;
       break;
     case "systems":
       body = (

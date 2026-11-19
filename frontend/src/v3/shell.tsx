@@ -6,12 +6,13 @@ import type { Theme, Units } from "../prefs";
 import { fmt } from "../format";
 import { Icon, SignalBars } from "./icons";
 
-export type View = "dashboard" | "telemetry" | "map" | "systems" | "mission" | "logs" | "settings";
+export type View = "dashboard" | "telemetry" | "map" | "video" | "systems" | "mission" | "logs" | "settings";
 
 export const VIEWS: { id: View; label: string; icon: () => ReactNode }[] = [
   { id: "dashboard", label: "Mission Dashboard", icon: () => Icon.home() },
   { id: "telemetry", label: "Telemetry", icon: () => Icon.pulse() },
   { id: "map", label: "Map & Tracking", icon: () => Icon.pin() },
+  { id: "video", label: "Video", icon: () => Icon.video() },
   { id: "systems", label: "Systems Health", icon: () => Icon.shield() },
   { id: "mission", label: "Mission Timeline", icon: () => Icon.list() },
   { id: "logs", label: "Data & Logs", icon: () => Icon.db() },
