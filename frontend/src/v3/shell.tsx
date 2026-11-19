@@ -20,20 +20,50 @@ export const VIEWS: { id: View; label: string; icon: () => ReactNode }[] = [
 
 export const APP_VERSION = "v0.3";
 
-export function Sidebar({ view, onView, socket }: { view: View; onView: (v: View) => void; socket: SocketState }) {
+export function Sidebar({
+  view,
+  onView,
+  socket,
+  collapsed,
+  onToggle,
+}: {
+  view: View;
+  onView: (v: View) => void;
+  socket: SocketState;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  const online = socket === "OPEN";
+  const statusText = online ? "Ground Station Online" : "Backend Offline";
   return (
-    <nav className="side">
+    <nav className={`side ${collapsed ? "collapsed" : ""}`}>
       <div className="side-brand">
         <img src="/comet-logo.png" alt="" className="side-logo" />
-        <div>
+        <div className="side-brand-text">
           <div className="side-name">COMET ROCKETRY</div>
           <div className="side-org">AIAA UT DALLAS</div>
         </div>
       </div>
+      <button
+        className="side-toggle"
+        onClick={onToggle}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed ? Icon.expand() : Icon.collapse()}
+        <span>Collapse</span>
+      </button>
       <ul className="side-nav">
         {VIEWS.map((v) => (
           <li key={v.id}>
-            <button className={`side-item ${view === v.id ? "active" : ""}`} onClick={() => onView(v.id)} aria-current={view === v.id ? "page" : undefined}>
+            <button
+              className={`side-item ${view === v.id ? "active" : ""}`}
+              onClick={() => onView(v.id)}
+              aria-current={view === v.id ? "page" : undefined}
+              aria-label={collapsed ? v.label : undefined}
+              title={collapsed ? v.label : undefined}
+            >
               {v.icon()}
               <span>{v.label}</span>
             </button>
@@ -41,8 +71,8 @@ export function Sidebar({ view, onView, socket }: { view: View; onView: (v: View
         ))}
       </ul>
       <div className="side-foot">
-        <div className={`side-status ${socket === "OPEN" ? "ok" : "bad"}`}>
-          <span className="dot" /> {socket === "OPEN" ? "Ground Station Online" : "Backend Offline"}
+        <div className={`side-status ${online ? "ok" : "bad"}`} title={collapsed ? statusText : undefined}>
+          <span className="dot" /> <span className="side-status-text">{statusText}</span>
         </div>
         <div className="side-ver">UTD SRAD Ground Station · {APP_VERSION}</div>
       </div>

@@ -17,7 +17,7 @@ import { LogoScene } from "./v3/LogoScene";
 export default function App() {
   const t = useTelemetry();
   const rocket = useRocket();
-  const { theme, setTheme, units, setUnits } = usePrefs();
+  const { theme, setTheme, units, setUnits, sidebar, setSidebar } = usePrefs();
   const [view, setView] = useState<View>("dashboard");
   const u = unitFmt(units);
 
@@ -163,8 +163,14 @@ export default function App() {
   }
 
   return (
-    <div className="shell">
-      <Sidebar view={view} onView={setView} socket={t.socket} />
+    <div className={`shell ${sidebar === "collapsed" ? "side-collapsed" : ""}`}>
+      <Sidebar
+        view={view}
+        onView={setView}
+        socket={t.socket}
+        collapsed={sidebar === "collapsed"}
+        onToggle={() => setSidebar(sidebar === "collapsed" ? "expanded" : "collapsed")}
+      />
       <div className="main">
         <TopBar
           title={view === "dashboard" ? "Ground Station Dashboard" : (VIEWS.find((v) => v.id === view)?.label ?? "")}

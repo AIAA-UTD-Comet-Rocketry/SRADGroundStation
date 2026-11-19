@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Theme = "light" | "dark";
 export type Units = "imperial" | "metric";
+export type SidebarState = "expanded" | "collapsed";
 
 function read<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try {
@@ -21,7 +22,7 @@ function write(key: string, value: string) {
   }
 }
 
-/** Per-viewer display preferences (theme + units). Never affects recorded data. */
+/** Per-viewer display preferences (theme, units, sidebar). Never affects recorded data. */
 export function usePrefs() {
   const systemDark = typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches;
   const [theme, setThemeState] = useState<Theme>(() => read("gs.theme", ["light", "dark"] as const, systemDark ? "dark" : "light"));
@@ -39,7 +40,12 @@ export function usePrefs() {
     setUnitsState(u);
     write("gs.units", u);
   }, []);
-  return { theme, setTheme, units, setUnits };
+  const [sidebar, setSidebarState] = useState<SidebarState>(() => read("gs.sidebar", ["expanded", "collapsed"] as const, "expanded"));
+  const setSidebar = useCallback((s: SidebarState) => {
+    setSidebarState(s);
+    write("gs.sidebar", s);
+  }, []);
+  return { theme, setTheme, units, setUnits, sidebar, setSidebar };
 }
 
 // ------------------------------------------------------------------ units
