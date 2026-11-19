@@ -13,7 +13,7 @@ official altitude record (that's the COTS altimeter, IREC §2.5).
 
 - Backend: Python (FastAPI + WebSocket) — `backend/`
 - Frontend: React + TypeScript (Vite, uPlot charts) — `frontend/`
-- Docs: [architecture](docs/architecture.md) · [telemetry schema](docs/telemetry-schema.md) · [hardware inventory](docs/hardware-inventory.md)
+- Docs: [architecture](docs/architecture.md) · [telemetry schema](docs/telemetry-schema.md) · [hardware inventory](docs/hardware-inventory.md) · [maintainers & handoff](docs/maintainers.md)
 
 ## Quick start (laptop, for development)
 
@@ -119,5 +119,5 @@ backend/ground_station/
 frontend/src/      React HUD
 config/            example config
 scripts/run-pi.sh  Pi launcher
-docs/              architecture, schema, hardware inventory
+docs/              architecture, schema, hardware inventory, maintainers & handoff
 ```
