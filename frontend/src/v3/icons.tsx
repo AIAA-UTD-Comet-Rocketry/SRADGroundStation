@@ -30,6 +30,9 @@ export const Icon = {
   moon: (s?: number) => <I size={s} d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />,
   antenna: (s?: number) => <I size={s} d="M12 12v9m-4 0h8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />,
   check: (s?: number) => <I size={s} d="m5 12 4 4 10-10" />,
+  video: (s?: number) => <I size={s} d="M3 7h12v10H3V7Zm12 3.5 6-3.5v10l-6-3.5" />,
+  collapse: (s?: number) => <I size={s} d="M4 5v14M20 12H9m4-4-4 4 4 4" />,
+  expand: (s?: number) => <I size={s} d="M4 5v14M9 12h11m-4-4 4 4-4 4" />,
 };
 
 export function SignalBars({ level }: { level: number }) {
