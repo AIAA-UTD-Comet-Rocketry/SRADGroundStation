@@ -5,15 +5,18 @@
 Raspberry Pi-based ground control system for real-time rocket telemetry, GPS tracking,
 flight visualization, and live video monitoring — UTD Comet Rocketry L3 SRAD.
 
-**Status: M1.** The HUD, simulator, ground logging and replay work. LIVE mode decodes
-the flight computer's binary UART packet (`fc_uart_v1`, taken from the club's
-python-ground-station repo — not yet confirmed for L3). Live video is **not implemented yet**.
+**Status:** the dashboard, simulator, ground logging, replay, LIVE decoding of the flight
+computer's UART packet (`fc_uart_v1`, not yet confirmed for L3) and a live Video page work.
+Waiting on radio and video hardware; see [where things stand](docs/roadmap.md).
 This is a monitoring display: it never transmits to the rocket, and it is not the
 official altitude record (that's the COTS altimeter, IREC §2.5).
 
+**New here? Start with [docs/README.md](docs/README.md).** Using an AI coding agent? It reads
+[AGENTS.md](AGENTS.md) automatically.
+
 - Backend: Python (FastAPI + WebSocket) — `backend/`
 - Frontend: React + TypeScript (Vite, uPlot charts) — `frontend/`
-- Docs: [architecture](docs/architecture.md) · [telemetry schema](docs/telemetry-schema.md) · [hardware inventory](docs/hardware-inventory.md) · [maintainers & handoff](docs/maintainers.md)
+- Docs: [start here](docs/README.md) · [launch day checklist](docs/guide/launch-day.md) · [architecture](docs/architecture.md) · [telemetry schema](docs/telemetry-schema.md) · [hardware inventory](docs/hardware-inventory.md) · [decisions](docs/decisions.md) · [maintainers & handoff](docs/maintainers.md)
 
 ## Quick start (laptop, for development)
 
@@ -119,5 +122,6 @@ backend/ground_station/
 frontend/src/      React HUD
 config/            example config
 scripts/run-pi.sh  Pi launcher
-docs/              architecture, schema, hardware inventory, maintainers & handoff
+docs/              start at docs/README.md; guide/ = plain-English guides
+AGENTS.md          briefing for AI coding agents (CLAUDE.md imports it)
 ```
