@@ -314,7 +314,7 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 .view-mission { grid-template-columns: 1fr 1fr 1fr; align-items: start; }
 .view-mission .wide { grid-column: 1 / -1; }
 .view-logs { grid-template-columns: 1.2fr 1fr 1fr; align-items: start; }
-.view-settings { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1100px; }
+.view-settings { grid-template-columns: 1fr 1fr; align-items: start; max-width: 1100px; width: 100%; margin-inline: auto; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-weight: 600; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .seg button { border: 0; background: transparent; color: var(--text); padding: 8px 14px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-weight: 700; font-size: 13px; }
