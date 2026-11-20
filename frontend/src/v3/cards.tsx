@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Phase, TelemetryFrame } from "../types";
-import type { RocketModel } from "../rocket";
+import { propellants, type MissionInfo, type RocketModel } from "../rocket";
 import type { UnitFmt } from "../prefs";
 import { fmt } from "../format";
 import { accelOf, fmtMmSs, type Derived } from "./derive";
@@ -166,11 +166,13 @@ function VerticalRocket({ rocket, phase }: { rocket: RocketModel | null; phase: 
 
 export function RocketStatusCard({
   rocket,
+  mission,
   latest,
   u,
   state,
 }: {
   rocket: RocketModel | null;
+  mission: MissionInfo | null;
   latest: TelemetryFrame | null;
   u: UnitFmt;
   state: DataState;
@@ -179,7 +181,8 @@ export function RocketStatusCard({
   const st = statusOf(d?.phase, state);
   const pred = rocket?.predicted;
   const rows: [string, ReactNode][] = [
-    ["Vehicle", rocket?.name ?? "—"],
+    ["Vehicle", mission?.vehicle ?? rocket?.name ?? "—"],
+    ["Motor", mission ? `${mission.motor} · ${propellants(mission)}` : "—"],
     ["Phase", d ? `${PHASE_TEXT[d.phase]}${d.fc_state ? ` (${d.fc_state})` : ""}` : "—"],
     ["Altitude", d?.altitude_agl_m != null ? `${fmt(u.alt(d.altitude_agl_m))} ${u.altUnit}` : "—"],
     ["Velocity", d?.vertical_velocity_mps != null ? `${fmt(u.vel(d.vertical_velocity_mps))} ${u.velUnit}` : "—"],

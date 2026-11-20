@@ -40,3 +40,13 @@ def test_api_rocket_endpoint_and_missing_file(tmp_path):
     with TestClient(create_app(cfg)) as c:
         assert c.get("/api/rocket").status_code == 404
         assert c.get("/api/status").status_code == 200  # bad design file never breaks the station
+
+
+def test_mission_info_endpoint():
+    cfg = Config()
+    with TestClient(create_app(cfg)) as c:
+        m = c.get("/api/mission").json()
+    assert m["team_id"] == 1100
+    assert m["category"] == "10K Liquid"
+    assert m["vehicle"] == "Hestia"
+    assert m["motor"] == "RANGER-1"

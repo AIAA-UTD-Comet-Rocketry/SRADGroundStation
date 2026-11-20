@@ -11,7 +11,10 @@ design decision a future maintainer would ask "why?" about, add it to
 
 ## What this is
 
-Ground station for UTD Comet Rocketry's L3 SRAD rocket (IREC). A Raspberry Pi receives the
+Ground station for UTD Comet Rocketry (IREC 2027 **Team 1100**, **10K Liquid** category). The
+vehicle is **Hestia**, powered by our liquid engine **RANGER-1** (nitrous oxide + isopropyl
+alcohol). These live in the `[mission]` / `[rocket]` config sections (`GET /api/mission`), not
+hardcoded in the UI. A Raspberry Pi receives the
 rocket's telemetry over a serial radio, logs it to disk, and shows it in a browser dashboard.
 Python FastAPI backend + React/TypeScript frontend. It must work **fully offline** at the
 launch site.
@@ -101,7 +104,7 @@ rejected bytes -> handle_rejected() -> rejected.csv + {"type":"rejected"}
 WebSocket messages: `snapshot` on connect, then `frame`, `event`, `rejected`, `status`
 (twice a second). A client too slow to keep up gets `resync` and reconnects for a fresh
 snapshot, so ingestion never waits on a browser.
-REST: `GET /api/status`, `GET /api/rocket`, `GET /api/sessions`, `POST /api/mode`
+REST: `GET /api/status`, `GET /api/rocket`, `GET /api/mission` (team/vehicle/motor), `GET /api/sessions`, `POST /api/mode`
 (switch source / start replay), `POST /api/sim` (simulator controls only).
 
 Sessions are written to `data/sessions/<UTC>_<mode>/` as `telemetry.csv`, `events.csv`,

@@ -15,6 +15,7 @@ Last updated: 2026-11-19. Update this when something moves.
 - Video page (any USB capture device, live view only)
 - Raspberry Pi launcher with kiosk mode
 - CI on every pull request
+- Team 1100 / Hestia / RANGER-1 info in the dashboard and splash (`[mission]` config)
 
 ## Blocked on avionics / hardware 🚧
 

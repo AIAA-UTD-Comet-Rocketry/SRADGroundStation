@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
@@ -99,6 +100,11 @@ def create_app(cfg: Config) -> FastAPI:
         if rocket_json is None:
             raise HTTPException(404, rocket_error or "no rocket loaded")
         return rocket_json
+
+    @app.get("/api/mission")
+    async def get_mission():
+        # Team / vehicle / motor info from config. Works even when no .ork is loaded.
+        return {**asdict(cfg.mission), "vehicle": cfg.rocket.display_name}
 
     @app.get("/api/sessions")
     async def get_sessions():

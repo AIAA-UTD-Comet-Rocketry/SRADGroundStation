@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { SocketState } from "../useTelemetry";
 import type { Status } from "../types";
-import type { RocketModel } from "../rocket";
+import { teamLine, type MissionInfo, type RocketModel } from "../rocket";
 import type { Theme, Units } from "../prefs";
 import { fmt } from "../format";
 import { Icon, SignalBars } from "./icons";
@@ -105,6 +105,7 @@ function rssiBars(rssi: number | null | undefined) {
 export function TopBar({
   title,
   rocket,
+  mission,
   status,
   socket,
   packetRate,
@@ -115,6 +116,7 @@ export function TopBar({
 }: {
   title: string;
   rocket: RocketModel | null;
+  mission: MissionInfo | null;
   status: Status | null;
   socket: SocketState;
   packetRate: number | null;
@@ -133,7 +135,10 @@ export function TopBar({
     <header className="top">
       <div className="top-title">
         <h1>{title}</h1>
-        <div className="top-crumb">Comet Rocketry — Mission Operations</div>
+        <div className="top-crumb">
+          {mission?.team_name ?? "Comet Rocketry"}
+          {teamLine(mission) ? ` · ${teamLine(mission)}` : ""} — Mission Operations
+        </div>
       </div>
       <div className="top-right">
         <div className="chip vehicle-chip" title={rocket ? `OpenRocket file: ${rocket.source_file}` : "No OpenRocket file loaded"}>

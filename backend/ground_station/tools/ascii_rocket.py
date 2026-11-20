@@ -7,7 +7,7 @@ with a flame, drifting stars, and Temoc watching from the corner.
 
 Just for fun (and a nice splash on the Pi). Reads the same [rocket] config as the server.
 Plain Python, no extra packages; needs a terminal with 256 colours. The dashboard's
-Configuration -> About page shows the same scene (frontend/src/v3/AsciiRocket.tsx).
+Configuration -> About page has a related live scene (frontend/src/v3/LogoScene.tsx).
 """
 
 from __future__ import annotations
@@ -170,11 +170,14 @@ def main() -> None:
     path = ork if ork.is_absolute() else REPO_ROOT / ork
     rocket = load_rocket(path, cfg.rocket.display_name).to_json()
     apo = (rocket.get("predicted") or {}).get("max_altitude_m")
+    m = cfg.mission
+    team = " · ".join(x for x in (m.competition, f"Team {m.team_id}" if m.team_id is not None else "", m.category) if x)
     info = [
-        "UTD Comet Rocketry",
+        f"UTD {m.team_name}",
         "SRAD Ground Station",
+        team,
         "",
-        rocket["name"],
+        f"{rocket['name']}  ·  {m.motor} ({m.oxidizer.split('(')[-1].rstrip(')')} / {m.fuel.split('(')[-1].rstrip(')')})",
         f"{rocket['length_m']:.2f} m  ·  {rocket['diameter_m'] * 1000:.0f} mm",
         f"apogee {apo:,.0f} m / {apo * 3.28084:,.0f} ft (predicted)" if apo else "",
         "",

@@ -38,3 +38,40 @@ export function useRocket(): RocketModel | null {
   }, []);
   return rocket;
 }
+
+/** Team, vehicle and motor info from the [mission] config section (GET /api/mission). */
+export interface MissionInfo {
+  team_name: string;
+  university: string;
+  competition: string;
+  team_id: number | null;
+  category: string;
+  vehicle: string;
+  motor: string;
+  motor_type: string;
+  oxidizer: string;
+  fuel: string;
+}
+
+export function useMission(): MissionInfo | null {
+  const [mission, setMission] = useState<MissionInfo | null>(null);
+  useEffect(() => {
+    fetch("/api/mission")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setMission)
+      .catch(() => setMission(null));
+  }, []);
+  return mission;
+}
+
+/** "IREC 2027 · Team 1100 · 10K Liquid" (skips parts that aren't set). */
+export function teamLine(m: MissionInfo | null): string | null {
+  if (!m) return null;
+  return [m.competition, m.team_id != null ? `Team ${m.team_id}` : "", m.category].filter(Boolean).join(" · ");
+}
+
+/** "N2O / IPA" short propellant label. */
+export function propellants(m: MissionInfo): string {
+  const short = (s: string) => s.match(/\(([^)]+)\)/)?.[1] ?? s;
+  return [m.oxidizer, m.fuel].filter(Boolean).map(short).join(" / ");
+}
