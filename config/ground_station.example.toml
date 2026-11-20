@@ -50,4 +50,16 @@ xbee_rssi_interval_s = 0.5
 # OpenRocket design drawn in the HUD, with its first simulation shown as the
 # predicted flight (reference only). Path relative to the repo root.
 ork_file = "rockets/irec-2027-v3.ork"
-display_name = "IREC 2027 · V3"
+display_name = "Hestia"           # vehicle name shown in the dashboard
+
+[mission]
+# Who we are and what we're flying. Update each competition year.
+team_name = "Comet Rocketry"
+university = "The University of Texas at Dallas"
+competition = "IREC 2027"
+team_id = 1100                    # from the Spaceport America Cup published team list
+category = "10K Liquid"
+motor = "RANGER-1"                # our liquid engine (the .ork may use a stand-in motor)
+motor_type = "Liquid bipropellant"
+oxidizer = "Nitrous oxide (N2O)"
+fuel = "Isopropyl alcohol (IPA)"

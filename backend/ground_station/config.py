@@ -65,7 +65,22 @@ class SerialConfig:
 class RocketConfig:
     # OpenRocket design shown in the HUD (outline + predicted flight). Relative to repo root.
     ork_file: Path | None = Path("rockets/irec-2027-v3.ork")
-    display_name: str = "IREC 2027 · V3"
+    display_name: str = "Hestia"
+
+
+@dataclass
+class MissionConfig:
+    # Who we are and what we're flying. Shown in the dashboard and the terminal splash.
+    # Update each competition year (IREC team list: Spaceport America Cup "Published Team List").
+    team_name: str = "Comet Rocketry"
+    university: str = "The University of Texas at Dallas"
+    competition: str = "IREC 2027"
+    team_id: int | None = 1100
+    category: str = "10K Liquid"
+    motor: str = "RANGER-1"
+    motor_type: str = "Liquid bipropellant"
+    oxidizer: str = "Nitrous oxide (N2O)"
+    fuel: str = "Isopropyl alcohol (IPA)"
 
 
 @dataclass
@@ -75,6 +90,7 @@ class Config:
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
     serial: SerialConfig = field(default_factory=SerialConfig)
     rocket: RocketConfig = field(default_factory=RocketConfig)
+    mission: MissionConfig = field(default_factory=MissionConfig)
 
 
 def _apply(section: Any, values: dict[str, Any]) -> None:

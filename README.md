@@ -3,7 +3,8 @@
 [![CI](https://github.com/AIAA-UTD-Comet-Rocketry/SRADGroundStation/actions/workflows/ci.yml/badge.svg)](https://github.com/AIAA-UTD-Comet-Rocketry/SRADGroundStation/actions/workflows/ci.yml)
 
 Raspberry Pi-based ground control system for real-time rocket telemetry, GPS tracking,
-flight visualization, and live video monitoring — UTD Comet Rocketry L3 SRAD.
+flight visualization, and live video monitoring — UTD Comet Rocketry, IREC 2027 Team 1100
+(10K Liquid). Vehicle: **Hestia**, engine: **RANGER-1** (N2O / IPA).
 
 **Status:** the dashboard, simulator, ground logging, replay, LIVE decoding of the flight
 computer's UART packet (`fc_uart_v1`, not yet confirmed for L3) and a live Video page work.

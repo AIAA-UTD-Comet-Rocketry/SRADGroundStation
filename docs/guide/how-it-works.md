@@ -5,6 +5,12 @@
 The rocket radios its data down, a Raspberry Pi on the ground saves it and shows it on a
 screen.
 
+## Our mission
+
+IREC 2027, **Team 1100**, **10K Liquid** category. The rocket is **Hestia**, flown on our own
+liquid engine **RANGER-1**: nitrous oxide (oxidizer) and isopropyl alcohol (fuel), fed by the
+nitrous's own pressure. Aiming for 10,000 ft.
+
 ## The pieces
 
 ```

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { api, useTelemetry } from "./useTelemetry";
-import { useRocket } from "./rocket";
+import { teamLine, useMission, useRocket, type MissionInfo } from "./rocket";
 import { unitFmt, usePrefs } from "./prefs";
 import { fmt } from "./format";
 import { derive } from "./v3/derive";
@@ -18,6 +18,7 @@ import { VideoView } from "./v3/VideoView";
 export default function App() {
   const t = useTelemetry();
   const rocket = useRocket();
+  const mission = useMission();
   const { theme, setTheme, units, setUnits, sidebar, setSidebar } = usePrefs();
   const [view, setView] = useState<View>("dashboard");
   const u = unitFmt(units);
@@ -145,7 +146,7 @@ export default function App() {
       );
       break;
     case "settings":
-      body = <Settings theme={theme} setTheme={setTheme} units={units} setUnits={setUnits} rocket={rocket} />;
+      body = <Settings theme={theme} setTheme={setTheme} units={units} setUnits={setUnits} rocket={rocket} mission={mission} />;
       break;
     default:
       body = (
@@ -153,7 +154,7 @@ export default function App() {
           {isSim && <SimBar status={t.status} />}
           <KpiRow latest={t.latest} derived={derived} u={u} state={state} />
           <div className="dash-row1">
-            <RocketStatusCard rocket={rocket} latest={t.latest} u={u} state={state} />
+            <RocketStatusCard rocket={rocket} mission={mission} latest={t.latest} u={u} state={state} />
             {altChart}
             {velChart}
           </div>
@@ -180,6 +181,7 @@ export default function App() {
         <TopBar
           title={view === "dashboard" ? "Ground Station Dashboard" : (VIEWS.find((v) => v.id === view)?.label ?? "")}
           rocket={rocket}
+          mission={mission}
           status={t.status}
           socket={t.socket}
           packetRate={derived.packetRate}
@@ -264,7 +266,7 @@ function PredictionCard({ rocket, u }: { rocket: ReturnType<typeof useRocket>; u
           <dd>{p.flight_time_s != null ? `${fmt(p.flight_time_s, 0)} s` : "—"}</dd>
           <dt>Ground hit</dt>
           <dd>{p.ground_hit_velocity_mps != null ? `${fmt(u.vel(p.ground_hit_velocity_mps), 1)} ${u.velUnit}` : "—"}</dd>
-          <dt>Motor (in .ork)</dt>
+          <dt>Motor (OpenRocket model)</dt>
           <dd>{rocket?.motor ?? "—"}</dd>
         </dl>
       )}
@@ -279,12 +281,14 @@ function Settings({
   units,
   setUnits,
   rocket,
+  mission,
 }: {
   theme: ReturnType<typeof usePrefs>["theme"];
   setTheme: ReturnType<typeof usePrefs>["setTheme"];
   units: ReturnType<typeof usePrefs>["units"];
   setUnits: ReturnType<typeof usePrefs>["setUnits"];
   rocket: ReturnType<typeof useRocket>;
+  mission: MissionInfo | null;
 }) {
   const rocketFile = rocket?.source_file ?? null;
   return (
@@ -314,6 +318,31 @@ function Settings({
         </div>
         <div className="foot-note">Saved in this browser only. Recorded data is always stored in SI units.</div>
       </Card>
+      <Card title="Team & vehicle" icon={Icon.rocket()}>
+        {!mission ? (
+          <div className="dim small">Team info not available (backend offline?).</div>
+        ) : (
+          <dl className="kv">
+            <dt>Team</dt>
+            <dd>
+              {mission.team_name} · {mission.university}
+            </dd>
+            <dt>Competition</dt>
+            <dd>{teamLine(mission)}</dd>
+            <dt>Vehicle</dt>
+            <dd>{mission.vehicle}</dd>
+            <dt>Motor</dt>
+            <dd>
+              {mission.motor} · {mission.motor_type}
+            </dd>
+            <dt>Propellants</dt>
+            <dd>
+              {mission.oxidizer} / {mission.fuel}
+            </dd>
+          </dl>
+        )}
+        <div className="foot-note">Set in the [mission] section of config/ground_station.toml. The OpenRocket model may use a stand-in motor.</div>
+      </Card>
       <Card title="Ground station" icon={Icon.antenna()}>
         <dl className="kv">
           <dt>Vehicle file</dt>
@@ -331,7 +360,9 @@ function Settings({
             <LogoScene rocket={rocket} />
             <div className="about-text">
               <b>UTD Comet Rocketry · SRAD Ground Station</b>
-              <span className="dim">{rocket.name}</span>
+              <span className="dim">
+                {mission ? `${teamLine(mission)} · ${mission.vehicle} · ${mission.motor}` : rocket.name}
+              </span>
               <span className="dim small">
                 The club logo, live: the globe spins while our rocket (shape from {rocket.source_file}, radius widened so it reads) orbits with Temoc
                 riding along. ASCII rendering idea from alishsharma17/Ascii-Flower-Bouquet-.
