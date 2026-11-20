@@ -14,6 +14,7 @@ import { Controls, EventLog, GpsPanel, ImuPanel, LinkPanel, RecordingPanel, Vide
 import { RocketProfile } from "./components/RocketProfile";
 import { LogoScene } from "./v3/LogoScene";
 import { VideoView } from "./v3/VideoView";
+import { PadOps } from "./v3/PadOps";
 
 export default function App() {
   const t = useTelemetry();
@@ -105,6 +106,9 @@ export default function App() {
           </div>
         </div>
       );
+      break;
+    case "padops":
+      body = <PadOps frames={t.frames} latest={t.latest} status={t.status} socket={t.socket} u={u} theme={theme} version={t.version} />;
       break;
     case "video":
       body = <VideoView />;

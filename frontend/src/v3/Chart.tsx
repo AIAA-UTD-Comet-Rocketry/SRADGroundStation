@@ -35,6 +35,7 @@ export function FlightChart({
   colorVar,
   theme,
   version,
+  xLabel = "Flight time",
 }: {
   title: string;
   icon: ReactNode;
@@ -45,6 +46,7 @@ export function FlightChart({
   colorVar: string;
   theme: Theme;
   version: number;
+  xLabel?: string;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
@@ -63,7 +65,7 @@ export function FlightChart({
       cursor: { show: false },
       scales: { x: { time: false } },
       axes: [
-        { stroke: axis, grid: { stroke: grid }, ticks: { stroke: grid }, values: (_u, vals) => vals.map((v) => fmtMmSs(v)), label: "Flight time", labelSize: 20, size: 40, font: "12px Inter, system-ui", labelFont: "12px Inter, system-ui" },
+        { stroke: axis, grid: { stroke: grid }, ticks: { stroke: grid }, values: (_u, vals) => vals.map((v) => fmtMmSs(v)), label: xLabel, labelSize: 20, size: 40, font: "12px Inter, system-ui", labelFont: "12px Inter, system-ui" },
         { stroke: axis, grid: { stroke: grid }, ticks: { stroke: grid }, label: axisLabel, labelSize: 20, size: 64, font: "12px Inter, system-ui", labelFont: "12px Inter, system-ui" },
       ],
       series: [

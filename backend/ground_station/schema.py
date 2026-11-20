@@ -80,6 +80,18 @@ class FlightData(BaseModel):
     status_flags: int | None = Field(default=None, ge=0)
     pyro_status: int | None = Field(default=None, ge=0)
 
+    # Propulsion / fill (PROPOSED, prototype for the Pad Ops page). Which sensors exist, and
+    # whether they reach us through the rocket's packet or a separate GSE link, is not decided
+    # with the prop team yet; today only the simulator fills these. ox_mass_kg and
+    # fill_valve_open would come from ground equipment (load cell, GSE), not the rocket.
+    ox_tank_pressure_pa: float | None = Field(default=None, ge=0)
+    fuel_tank_pressure_pa: float | None = Field(default=None, ge=0)
+    chamber_pressure_pa: float | None = Field(default=None, ge=0)
+    ox_tank_temp_c: float | None = None
+    ox_mass_kg: float | None = Field(default=None, ge=0)
+    fill_valve_open: bool | None = None
+    main_valves_open: bool | None = None
+
 
 class TelemetryFrame(BaseModel):
     """A decoded packet plus metadata attached on the ground."""

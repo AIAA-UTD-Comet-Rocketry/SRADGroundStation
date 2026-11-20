@@ -401,3 +401,84 @@ button:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
 .about-text { display: flex; flex-direction: column; gap: 6px; text-align: center; max-width: 640px; }
 .logo-scene { width: 100%; display: flex; justify-content: center; }
 .logo-scene canvas { display: block; border-radius: 16px; background: #0b1238; }
+
+/* ---------------- Pad Ops (PROTOTYPE) ---------------- */
+.view-padops { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+.view-padops .wide { grid-column: 1 / -1; }
+.padops-note { font-size: 13px; color: var(--dim); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-2); }
+.padops-note b { color: var(--warn); letter-spacing: .06em; }
+.padops-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.padops-charts .card { min-height: 280px; }
+.padops-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.feed-card { min-width: 0; }
+.feed { width: 100%; max-height: 720px; display: block; margin: 0 auto; }
+.feed text { font-family: Inter, system-ui, sans-serif; }
+.feed .d-label { fill: var(--text); font-size: 12px; font-weight: 700; }
+.feed .d-sub { fill: var(--dim); font-size: 10px; }
+.feed .d-val { fill: var(--text); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.feed .pipe, .feed .pipe-p { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.feed .pipe { stroke: var(--border); }
+.feed .pipe-p { stroke: var(--accent); }
+.feed .gse-box { fill: none; stroke: var(--border); stroke-dasharray: 5 5; }
+.feed .bottle { fill: var(--card-2); stroke: var(--dim); stroke-width: 1.5; }
+.feed .qd { fill: var(--dim); }
+.feed .tank { fill: var(--card-2); stroke: var(--dim); stroke-width: 2; }
+.feed .ipa { fill: var(--ok-soft); }
+.feed .n2o { fill: var(--info-soft); stroke: var(--info); stroke-width: 1; transition: height .4s, y .4s; }
+.feed .piston { fill: var(--text); transition: y .4s; }
+.feed .injector { fill: var(--dim); }
+.feed .chamber { fill: var(--card-2); stroke: var(--dim); stroke-width: 2; }
+.feed .chamber.hot { fill: var(--accent-soft); stroke: var(--accent); }
+.feed .nozzle { fill: var(--card-2); stroke: var(--dim); stroke-width: 2; }
+.feed .flame { fill: #fb923c; opacity: .9; }
+.feed .valve polygon { stroke-width: 1.5; }
+.feed .v-open polygon { fill: var(--ok); stroke: var(--ok); }
+.feed .v-closed polygon { fill: var(--card); stroke: var(--dim); }
+.feed .v-unk polygon { fill: none; stroke: var(--muted); stroke-dasharray: 2 2; }
+.feed .check polygon { fill: var(--card); stroke: var(--dim); }
+.feed .check line { stroke: var(--dim); stroke-width: 2; }
+.feed .vent-plume circle { fill: var(--muted); opacity: .5; animation: vent 1.2s ease-out infinite; }
+.feed .vent-plume.liquid circle { fill: var(--info); opacity: .8; }
+.feed .vent-plume circle:nth-child(2) { animation-delay: .2s; }
+.feed .vent-plume circle:nth-child(3) { animation-delay: .4s; }
+@keyframes vent { from { opacity: .9; } to { opacity: .15; } }
+.feed .ptag rect { fill: var(--card); stroke: var(--border); }
+.feed .ptag-ok rect { stroke: var(--ok); }
+.feed .ptag-warn rect { stroke: var(--warn); }
+.feed .ptag-bad rect { stroke: var(--bad); fill: var(--bad-soft); }
+.feed-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; align-items: center; }
+.feed-legend .lg { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+.feed-legend .lg.pipe-p { background: var(--accent); }
+.feed-legend .lg.pipe { background: var(--border); }
+.feed-legend .lg.v-open { background: var(--ok); width: 10px; height: 10px; }
+.feed-legend .lg.v-closed { border: 1.5px solid var(--dim); width: 10px; height: 10px; }
+.fillhold { display: flex; flex-direction: column; gap: 8px; }
+.timer { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-2); transition: background .2s; }
+.timer.on { border-color: var(--accent); }
+.timer.flash { background: var(--accent-soft); }
+.timer-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.timer-val { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; margin-bottom: 6px; }
+.fh-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.fh-row span { color: var(--dim); }
+.ok-text { color: var(--ok); }
+.pbar { position: relative; height: 8px; border-radius: 4px; background: var(--border); margin-bottom: 14px; }
+.pbar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--info); transition: width .3s; }
+.pbar.mass .pbar-fill { background: var(--info); }
+.pbar.warn .pbar-fill { background: var(--warn); }
+.pbar.bad .pbar-fill { background: var(--bad); }
+.pbar-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); opacity: .6; }
+.pbar-mark span { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--dim); white-space: nowrap; }
+.beep-toggle { color: var(--dim); display: flex; gap: 6px; align-items: center; }
+.cl-group { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 10px 0 4px; }
+.cl-item { display: grid; grid-template-columns: 18px 64px 1fr auto; gap: 8px; align-items: center; padding: 4px 0; font-size: 13px; cursor: pointer; }
+.cl-item.auto { cursor: default; }
+.cl-item.done .cl-text { color: var(--dim); text-decoration: line-through; }
+.cl-item.auto.done .cl-text { text-decoration: none; }
+.cl-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--dim); display: grid; place-items: center; font-size: 11px; color: #fff; }
+.cl-box.on { background: var(--ok); border-color: var(--ok); }
+.cl-role { font-size: 10px; font-weight: 800; text-align: center; padding: 2px 4px; border-radius: 5px; background: var(--card-2); border: 1px solid var(--border); color: var(--dim); }
+.cl-role.r-operator { color: var(--accent); border-color: var(--accent); }
+.cl-role.r-director { color: var(--info); border-color: var(--info); }
+@media (max-width: 1100px) {
+  .view-padops, .padops-charts { grid-template-columns: 1fr; }
+}

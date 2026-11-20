@@ -31,7 +31,7 @@ class SimulationConfig:
     apogee_ft: float = 10_000
     packet_loss: float = 0.02
     corrupt_rate: float = 0.0
-    burn_time_s: float = 5.0
+    burn_time_s: float = 4.0  # RANGER-1 (PDR)
     # SYNTHETIC origin for simulated GPS. Not a launch site.
     origin_lat_deg: float = 32.0
     origin_lon_deg: float = -97.0

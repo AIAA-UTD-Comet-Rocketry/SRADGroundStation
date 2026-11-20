@@ -37,7 +37,7 @@ class ModeRequest(BaseModel):
 
 
 class SimRequest(BaseModel):
-    action: Literal["launch", "pause", "resume", "reset", "dropout", "configure"]
+    action: Literal["launch", "pause", "resume", "reset", "dropout", "configure", "fill_start", "fill_stop"]
     speed: float | None = Field(default=None, gt=0, le=20)
     apogee_ft: float | None = None
     packet_loss: float | None = Field(default=None, ge=0, le=1)
@@ -148,6 +148,10 @@ def create_app(cfg: Config) -> FastAPI:
             src.set_paused(True)
         elif req.action == "resume":
             src.set_paused(False)
+        elif req.action == "fill_start":
+            src.start_fill()
+        elif req.action == "fill_stop":
+            src.stop_fill()
         elif req.action == "dropout":
             src.trigger_dropout(req.dropout_s)
         elif req.action == "reset":

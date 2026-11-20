@@ -27,6 +27,14 @@ export interface FlightData {
   yaw_deg: number | null;
   status_flags: number | null;
   pyro_status: number | null;
+  // Propulsion / fill (PROPOSED; only the simulator fills these today)
+  ox_tank_pressure_pa: number | null;
+  fuel_tank_pressure_pa: number | null;
+  chamber_pressure_pa: number | null;
+  ox_tank_temp_c: number | null;
+  ox_mass_kg: number | null;
+  fill_valve_open: boolean | null;
+  main_valves_open: boolean | null;
 }
 
 export interface TelemetryFrame {

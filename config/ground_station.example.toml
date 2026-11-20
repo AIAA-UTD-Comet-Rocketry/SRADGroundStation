@@ -18,7 +18,7 @@ rate_hz = 10
 apogee_ft = 10000             # 10000 / 30000 / 45000 categories
 packet_loss = 0.02
 corrupt_rate = 0.0
-burn_time_s = 5.0
+burn_time_s = 4.0             # RANGER-1 burn (PDR)
 # SYNTHETIC origin for simulated GPS only. Do not put the real launch site here.
 origin_lat_deg = 32.0
 origin_lon_deg = -97.0

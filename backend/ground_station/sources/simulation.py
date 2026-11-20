@@ -17,6 +17,7 @@ from typing import Any
 from ..config import SimulationConfig
 from ..schema import FlightData, Mode, Phase
 from .base import RejectedPacket, SourceEvent, SourcePacket, TelemetrySource
+from .propulsion_sim import PropulsionSim
 
 G = 9.80665
 FT_TO_M = 0.3048
@@ -135,17 +136,30 @@ class SimulationSource(TelemetrySource):
         self.sequence = 0
         self.dropout_remaining_s = 0.0
         self.flight = SimFlight(cfg, self.apogee_ft)
+        self.prop = PropulsionSim()
+        self.clock_s = 0.0  # simulated flight-computer clock (runs on the pad too)
 
     # ---- operator controls (affect the simulator only, never a rocket) ----
     def launch(self) -> None:
         self.paused = False
+        if self.flight.state.phase == Phase.PAD:
+            self.prop.ignite()
         self.flight.launch()
+
+    def start_fill(self) -> None:
+        if self.flight.state.phase == Phase.PAD:
+            self.paused = False
+            self.prop.start_fill()
+
+    def stop_fill(self) -> None:
+        self.prop.stop_fill()
 
     def set_paused(self, paused: bool) -> None:
         self.paused = paused
 
     def reset(self) -> None:
         self.flight = SimFlight(self.cfg, self.apogee_ft)
+        self.prop = PropulsionSim()
         self.paused = False
         self.dropout_remaining_s = 0.0
 
@@ -178,6 +192,9 @@ class SimulationSource(TelemetrySource):
             "corrupt_rate": self.corrupt_rate,
             "dropout_remaining_s": round(self.dropout_remaining_s, 1),
             "sim_phase": st.phase.value,
+            "prop_state": self.prop.state,
+            "prop_state_s": round(self.prop.state_t, 1),
+            "ox_target_kg": self.prop.p.ox_target_kg,
         }
 
     # ---- packet generation ----
@@ -201,6 +218,8 @@ class SimulationSource(TelemetrySource):
             gps_altitude_msl_m=round(alt_msl + rng.gauss(0, 5.0), 1),
             pressure_pa=round(isa_pressure_pa(c.pad_elevation_m + alt_meas), 1),
             temperature_c=round(15.0 - 0.0065 * alt_msl + rng.gauss(0, 0.1), 2),
+            fc_time_s=round(self.clock_s, 3),
+            **self._prop_fields(),
         )
         horiz = math.hypot(st.east + GROUND_STATION_OFFSET_M, st.north)
         slant = max(10.0, math.hypot(horiz, st.alt))
@@ -208,12 +227,30 @@ class SimulationSource(TelemetrySource):
         snr = max(-20.0, min(12.0, 10.0 - 0.4 * (-rssi - 80.0) + rng.gauss(0, 0.8)))
         return SourcePacket(data=data, rssi_dbm=round(rssi, 1), snr_db=round(snr, 1))
 
+    def _prop_fields(self) -> dict[str, Any]:
+        pr, rng = self.prop, self.rng
+
+        def noisy_pa(v: float) -> float:
+            return round(max(0.0, v + rng.gauss(0, 2.0 * 6894.757)) if v > 0 else 0.0, 0)
+
+        return {
+            "ox_tank_pressure_pa": noisy_pa(pr.tank_pressure_pa()),
+            "fuel_tank_pressure_pa": noisy_pa(pr.fuel_pressure_pa()),
+            "chamber_pressure_pa": noisy_pa(pr.chamber_pressure_pa()),
+            "ox_tank_temp_c": round(pr.temp_c + rng.gauss(0, 0.1), 2),
+            "ox_mass_kg": round(max(0.0, pr.ox_kg + rng.gauss(0, 0.01)), 3),
+            "fill_valve_open": pr.fill_valve_open,
+            "main_valves_open": pr.main_valves_open,
+        }
+
     def tick(self, dt_wall: float) -> SourceEvent | None:
         """Advance by one wall-clock tick. Returns the packet "received", or None if lost."""
         if self.paused:
             return None
         dt = dt_wall * self.speed
+        self.clock_s += dt
         self.flight.step(dt)
+        self.prop.step(dt)
         packet = self.make_packet()
         self.sequence += 1  # the rocket increments even when the packet is lost
 
